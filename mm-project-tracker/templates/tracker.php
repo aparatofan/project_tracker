@@ -49,7 +49,7 @@
     </div>
 
     <!-- New Project Modal -->
-    <div id="mmpt-modal-project" class="mmpt-modal" style="display:none;">
+    <div id="mmpt-modal-project" class="mmpt-modal mmpt-modal-wide" style="display:none;">
         <div class="mmpt-modal-overlay"></div>
         <div class="mmpt-modal-content">
             <div class="mmpt-modal-header">
@@ -59,52 +59,54 @@
             <p class="mmpt-modal-subtitle" id="mmpt-modal-project-subtitle">Before you start, define where you want to end up and why this matters.</p>
             <form id="mmpt-form-project" class="mmpt-form">
                 <input type="hidden" id="mmpt-edit-id" value="" />
-                <div class="mmpt-field">
-                    <label for="mmpt-name">Project Name *</label>
-                    <input type="text" id="mmpt-name" required placeholder="Project name" />
-                </div>
-                <div class="mmpt-field">
-                    <label for="mmpt-end-in-mind">&#127937; The End I Have In Mind *</label>
-                    <textarea id="mmpt-end-in-mind" required placeholder="What does 'done' look like?" rows="3"></textarea>
-                </div>
-                <div class="mmpt-field">
-                    <label for="mmpt-rationale">&#128161; Why Am I Starting This? *</label>
-                    <textarea id="mmpt-rationale" required placeholder="How will this help my work or life?" rows="3"></textarea>
-                </div>
-                <div class="mmpt-field-row">
-                    <div class="mmpt-field">
-                        <label for="mmpt-priority">Priority</label>
-                        <select id="mmpt-priority">
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                            <option value="low">Low</option>
-                        </select>
+                <div class="mmpt-form-grid">
+                    <div class="mmpt-form-col-left">
+                        <div class="mmpt-field">
+                            <label for="mmpt-name">Project Name *</label>
+                            <input type="text" id="mmpt-name" required placeholder="Project name" />
+                        </div>
+                        <div class="mmpt-field">
+                            <label for="mmpt-end-in-mind">The End I Have In Mind *</label>
+                            <textarea id="mmpt-end-in-mind" required placeholder="What does 'done' look like?" rows="5"></textarea>
+                        </div>
+                        <div class="mmpt-field">
+                            <label for="mmpt-rationale">Why Am I Starting This? *</label>
+                            <textarea id="mmpt-rationale" required placeholder="How will this help my work or life?" rows="5"></textarea>
+                        </div>
                     </div>
-                    <div class="mmpt-field">
-                        <label for="mmpt-category">Category</label>
-                        <input type="text" id="mmpt-category" placeholder="TBT, PNA, NET, Personal..." />
+                    <div class="mmpt-form-col-right">
+                        <div class="mmpt-field">
+                            <label for="mmpt-priority">Priority</label>
+                            <select id="mmpt-priority">
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                        <div class="mmpt-field">
+                            <label for="mmpt-category">Category</label>
+                            <input type="text" id="mmpt-category" placeholder="TBT, PNA, NET, Personal..." />
+                        </div>
+                        <div class="mmpt-field">
+                            <label for="mmpt-cadence">Commitment Cadence</label>
+                            <select id="mmpt-cadence">
+                                <option value="none" selected>No recurring commitment</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="biweekly">Biweekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                            </select>
+                        </div>
+                        <div class="mmpt-field">
+                            <label for="mmpt-cadence-label">Cadence Description</label>
+                            <input type="text" id="mmpt-cadence-label" placeholder="e.g. 1 lesson per week" />
+                        </div>
+                        <div class="mmpt-field">
+                            <label for="mmpt-stale-days">Stale After (days)</label>
+                            <input type="number" id="mmpt-stale-days" value="14" min="1" />
+                        </div>
                     </div>
-                </div>
-                <div class="mmpt-field-row">
-                    <div class="mmpt-field">
-                        <label for="mmpt-cadence">Commitment Cadence</label>
-                        <select id="mmpt-cadence">
-                            <option value="none" selected>No recurring commitment</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="biweekly">Biweekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="quarterly">Quarterly</option>
-                        </select>
-                    </div>
-                    <div class="mmpt-field">
-                        <label for="mmpt-cadence-label">Cadence Description</label>
-                        <input type="text" id="mmpt-cadence-label" placeholder="e.g. 1 lesson per week" />
-                    </div>
-                </div>
-                <div class="mmpt-field">
-                    <label for="mmpt-stale-days">Stale After (days)</label>
-                    <input type="number" id="mmpt-stale-days" value="14" min="1" />
                 </div>
                 <div class="mmpt-form-actions">
                     <button type="button" class="mmpt-btn mmpt-btn-secondary mmpt-modal-close">Cancel</button>
