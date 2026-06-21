@@ -1,12 +1,9 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <div id="mmpt-app" class="mmpt-app">
-    <!-- Alert Panel -->
-    <div id="mmpt-alerts" class="mmpt-alerts" style="display:none;"></div>
-
     <!-- Header -->
     <div class="mmpt-header">
         <div class="mmpt-header-left">
-            <h2 class="mmpt-title">&#127919; Project Tracker</h2>
+            <h2 class="mmpt-title">Project Tracker</h2>
             <p class="mmpt-subtitle">"Begin with the end in mind" &mdash; Habit 2</p>
         </div>
         <button id="mmpt-new-btn" class="mmpt-btn mmpt-btn-primary">+ New Project</button>

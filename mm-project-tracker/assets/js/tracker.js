@@ -72,6 +72,20 @@
             p.charAt(0).toUpperCase() + p.slice(1) + '</span>';
     }
 
+    var CADENCE_DAYS = { daily: 1, weekly: 7, biweekly: 14, monthly: 30, quarterly: 90 };
+
+    function cardStatusClass(p) {
+        if (!p.cadence || p.cadence === 'none') return '';
+        var allowed = CADENCE_DAYS[p.cadence];
+        if (!allowed) return '';
+        var daysOverdue = p.days_since_activity - allowed;
+        if (daysOverdue < -2) return 'mmpt-card--on-track';
+        if (daysOverdue < 0) return 'mmpt-card--due-soon';
+        if (daysOverdue <= 3) return 'mmpt-card--slight-over';
+        if (daysOverdue <= 14) return 'mmpt-card--overdue';
+        return 'mmpt-card--severe';
+    }
+
     function calcNextVersion(current, type) {
         var parts = current.split('.');
         var major = parseInt(parts[0], 10) || 1;
@@ -82,26 +96,6 @@
     }
 
     /* ───── Render ───── */
-    function renderAlerts() {
-        var el = $('#mmpt-alerts');
-        var items = [];
-        state.projects.forEach(function (p) {
-            if (p.status !== 'publish') return;
-            var parts = [];
-            if (p.staleness_level === 'critical') parts.push(p.days_since_activity + 'd silent');
-            if (p.commitment_status === 'overdue') parts.push('Overdue by ' + Math.abs(p.commitment_days_remaining) + 'd');
-            else if (p.commitment_status === 'late') parts.push('Late');
-            if (parts.length) items.push(esc(p.name) + ' \u2014 ' + parts.join(' \u2014 '));
-        });
-        if (!items.length) {
-            el.style.display = 'none';
-            return;
-        }
-        el.style.display = '';
-        el.innerHTML = '<div class="mmpt-alerts-title">\u26A0 Attention Needed</div><ul>' +
-            items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul>';
-    }
-
     function renderCounts() {
         var active = 0, archived = 0, milestones = 0;
         state.projects.forEach(function (p) {
@@ -149,19 +143,38 @@
         return filtered;
     }
 
+    function milestoneItemHtml(m) {
+        return '<div class="mmpt-timeline-item" data-type="' + esc(m.type) + '">' +
+            '<div class="mmpt-timeline-dot"></div>' +
+            '<div class="mmpt-timeline-meta">' +
+            '<span class="mmpt-chip mmpt-chip-version">v' + esc(m.version) + '</span>' +
+            '<span class="mmpt-timeline-date">' + formatDate(m.date) + '</span>' +
+            '</div>' +
+            '<div class="mmpt-timeline-desc">' + esc(m.description) + '</div>' +
+            '</div>';
+    }
+
+    var MILESTONE_VISIBLE = 7;
+
     function renderMilestones(milestones) {
         if (!milestones || !milestones.length) return '<p class="mmpt-detail-text" style="color:#94A3B8;">No milestones yet.</p>';
-        var sorted = milestones.slice().reverse();
-        return '<div class="mmpt-timeline">' + sorted.map(function (m) {
-            return '<div class="mmpt-timeline-item" data-type="' + esc(m.type) + '">' +
-                '<div class="mmpt-timeline-dot"></div>' +
-                '<div class="mmpt-timeline-meta">' +
-                '<span class="mmpt-chip mmpt-chip-version">v' + esc(m.version) + '</span>' +
-                '<span class="mmpt-timeline-date">' + formatDate(m.date) + '</span>' +
-                '</div>' +
-                '<div class="mmpt-timeline-desc">' + esc(m.description) + '</div>' +
-                '</div>';
-        }).join('') + '</div>';
+        var sorted = milestones.slice().reverse(); // newest first
+        var visible = sorted.slice(0, MILESTONE_VISIBLE);
+        var hidden = sorted.slice(MILESTONE_VISIBLE);
+
+        var html = '<div class="mmpt-timeline">' + visible.map(milestoneItemHtml).join('');
+        if (hidden.length) {
+            html += '<div class="mmpt-milestone-hidden" style="display:none;">' +
+                hidden.map(milestoneItemHtml).join('') + '</div>';
+        }
+        html += '</div>';
+
+        if (hidden.length) {
+            var label = 'Show ' + hidden.length + ' earlier milestone' + (hidden.length === 1 ? '' : 's') + ' ▾';
+            html += '<button type="button" class="mmpt-milestone-toggle" data-count="' + hidden.length +
+                '" data-expanded="false">' + label + '</button>';
+        }
+        return html;
     }
 
     function renderCard(p) {
@@ -175,8 +188,10 @@
                 '</div>';
         }
         var archiveLabel = p.status === 'publish' ? 'Archive' : 'Restore';
+        var statusClass = cardStatusClass(p);
+        var cardClass = 'mmpt-card' + (statusClass ? ' ' + statusClass : '');
 
-        return '<div class="mmpt-card" data-id="' + p.id + '" data-priority="' + p.priority + '" data-staleness="' + p.staleness_level + '">' +
+        return '<div class="' + cardClass + '" data-id="' + p.id + '" data-priority="' + p.priority + '" data-staleness="' + p.staleness_level + '">' +
             '<div class="mmpt-card-header">' +
                 '<span class="mmpt-card-name">' + esc(p.name) + '</span>' +
                 '<span class="mmpt-chip mmpt-chip-version">v' + esc(p.version) + '</span>' +
@@ -223,7 +238,6 @@
     }
 
     function refresh() {
-        renderAlerts();
         renderCounts();
         renderProjects();
     }
@@ -348,6 +362,23 @@
         /* Card Click Delegation */
         $('#mmpt-projects').addEventListener('click', function (e) {
             var target = e.target;
+
+            /* Milestone "Show earlier" toggle */
+            var msToggle = target.closest('.mmpt-milestone-toggle');
+            if (msToggle) {
+                var section = msToggle.closest('.mmpt-detail-section');
+                var hiddenBox = section ? section.querySelector('.mmpt-milestone-hidden') : null;
+                if (hiddenBox) {
+                    var expanded = msToggle.dataset.expanded === 'true';
+                    hiddenBox.style.display = expanded ? 'none' : 'block';
+                    msToggle.dataset.expanded = expanded ? 'false' : 'true';
+                    var count = msToggle.dataset.count;
+                    msToggle.textContent = expanded
+                        ? ('Show ' + count + ' earlier milestone' + (count === '1' ? '' : 's') + ' ▾')
+                        : 'Hide earlier milestones ▴';
+                }
+                return;
+            }
 
             /* Expand / Collapse */
             var header = target.closest('.mmpt-card-header');
