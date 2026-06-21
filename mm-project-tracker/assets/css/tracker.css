@@ -91,38 +91,6 @@
     color: #1E293B;
 }
 
-/* Alert Panel */
-.mmpt-alerts {
-    background: linear-gradient(135deg, #FEF2F2, #FFF7ED);
-    border: 1px solid #FECACA;
-    border-radius: 12px;
-    padding: 16px 20px;
-    margin-bottom: 20px;
-}
-.mmpt-alerts-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #DC2626;
-    margin: 0 0 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-.mmpt-alerts ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-.mmpt-alerts li {
-    font-size: 14px;
-    color: #92400E;
-    padding: 4px 0;
-}
-.mmpt-alerts li::before {
-    content: "\2022 ";
-    color: #EF4444;
-    font-weight: 700;
-}
-
 /* Filters */
 .mmpt-filters {
     margin-bottom: 20px;
@@ -234,6 +202,45 @@
 }
 .mmpt-card[data-staleness="critical"] {
     box-shadow: 0 0 0 2px #FECACA, 0 0 12px rgba(239,68,68,0.15);
+}
+
+/* Commitment status card backgrounds (applied when a cadence is set) */
+.mmpt-card--on-track    { background: #EAF3DE; border-color: #C0DD97; }
+.mmpt-card--due-soon    { background: #FAEEDA; border-color: #FAC775; }
+.mmpt-card--slight-over { background: #FCEBEB; border-color: #F7C1C1; }
+.mmpt-card--overdue     { background: #F09595; border-color: #E24B4A; }
+.mmpt-card--severe      { background: #791F1F; border-color: #501313; color: #FCEBEB; }
+
+/* Left accent border = status colour (overrides priority colour) */
+.mmpt-card.mmpt-card--on-track    { border-left-color: #639922; }
+.mmpt-card.mmpt-card--due-soon    { border-left-color: #BA7517; }
+.mmpt-card.mmpt-card--slight-over { border-left-color: #E24B4A; }
+.mmpt-card.mmpt-card--overdue     { border-left-color: #A32D2D; }
+.mmpt-card.mmpt-card--severe      { border-left-color: #501313; }
+
+/* Invert all text inside severely overdue cards (dark bg, light text) */
+.mmpt-card--severe .mmpt-card-name,
+.mmpt-card--severe .mmpt-detail-text,
+.mmpt-card--severe .mmpt-timeline-desc,
+.mmpt-card--severe .mmpt-timeline-date,
+.mmpt-card--severe .mmpt-card-created {
+    color: #FCEBEB;
+}
+.mmpt-card--severe .mmpt-detail-label {
+    color: #F7C1C1; /* slightly muted for labels */
+}
+.mmpt-card--severe .mmpt-card-chevron {
+    color: #F7C1C1;
+}
+.mmpt-card--severe .mmpt-card-body,
+.mmpt-card--severe .mmpt-card-actions {
+    border-top-color: #A32D2D;
+}
+.mmpt-card--severe .mmpt-timeline {
+    border-left-color: #A32D2D;
+}
+.mmpt-card--severe .mmpt-milestone-toggle {
+    color: #F7C1C1;
 }
 
 .mmpt-card-header {
@@ -397,6 +404,21 @@
 .mmpt-timeline-desc {
     font-size: 14px;
     color: #334155;
+}
+
+/* Milestone "Show earlier" toggle */
+.mmpt-milestone-toggle {
+    font-size: 13px;
+    color: #3B82F6;
+    cursor: pointer;
+    padding: 8px 0;
+    border: none;
+    background: none;
+    text-align: left;
+    font-family: inherit;
+}
+.mmpt-milestone-toggle:hover {
+    text-decoration: underline;
 }
 
 /* Card Actions */
