@@ -4,7 +4,7 @@ Tags: project management, tracker, personal
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 
 A personal project management tool — "Begin with the end in mind." (Covey Habit 2)
@@ -20,6 +20,9 @@ Features:
 * Priority-based colour coding
 * Archive/restore workflow
 * REST API for future integrations
+* Task Triage with five colour-coded urgency levels
+* Due-date countdowns and priority/date ordering
+* Task editing, completion, reopening, and deletion
 
 == Installation ==
 
@@ -29,6 +32,12 @@ Features:
 4. Add the page to your site menu
 
 == Changelog ==
+
+= 1.2.0 =
+* Added Task Triage as a second main section
+* Added red, orange, yellow, green, and black triage levels
+* Added due dates with days-left and overdue indicators
+* Added task editing, completion, reopening, and deletion
 
 = 1.0.0 =
 * Initial release

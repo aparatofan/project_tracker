@@ -20,6 +20,7 @@ class MMPT_REST_API {
     );
 
     const VALID_PRIORITIES = array( 'high', 'medium', 'low' );
+    const VALID_TASK_COLOURS = array( 'red', 'orange', 'yellow', 'green', 'black' );
     const VALID_CADENCES   = array( 'daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'none' );
     const CADENCE_DAYS     = array(
         'daily'     => 1,
@@ -83,6 +84,177 @@ class MMPT_REST_API {
             'callback'            => array( $this, 'get_summary' ),
             'permission_callback' => array( $this, 'check_admin_permission' ),
         ) );
+
+        register_rest_route( self::NAMESPACE, '/tasks', array(
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_tasks' ),
+                'permission_callback' => array( $this, 'check_admin_permission' ),
+            ),
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'create_task' ),
+                'permission_callback' => array( $this, 'check_admin_permission' ),
+            ),
+        ) );
+
+        register_rest_route( self::NAMESPACE, '/tasks/(?P<id>\d+)', array(
+            array(
+                'methods'             => 'PUT',
+                'callback'            => array( $this, 'update_task' ),
+                'permission_callback' => array( $this, 'check_admin_permission' ),
+            ),
+            array(
+                'methods'             => 'DELETE',
+                'callback'            => array( $this, 'delete_task' ),
+                'permission_callback' => array( $this, 'check_admin_permission' ),
+            ),
+        ) );
+
+        register_rest_route( self::NAMESPACE, '/tasks/(?P<id>\d+)/complete', array(
+            'methods'             => 'PUT',
+            'callback'            => array( $this, 'toggle_task_complete' ),
+            'permission_callback' => array( $this, 'check_admin_permission' ),
+        ) );
+    }
+
+    /**
+     * GET /tasks
+     */
+    public function get_tasks( WP_REST_Request $request ) {
+        $query = new WP_Query( array(
+            'post_type'      => 'mm_task',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ) );
+
+        $tasks = array_map( array( $this, 'format_task' ), $query->posts );
+        $colour_order = array( 'red' => 0, 'orange' => 1, 'yellow' => 2, 'green' => 3, 'black' => 4 );
+
+        usort( $tasks, function( $a, $b ) use ( $colour_order ) {
+            if ( $a['completed'] !== $b['completed'] ) {
+                return $a['completed'] ? 1 : -1;
+            }
+
+            $colour_compare = $colour_order[ $a['colour'] ] - $colour_order[ $b['colour'] ];
+            if ( $colour_compare !== 0 ) {
+                return $colour_compare;
+            }
+
+            if ( $a['due_date'] && $b['due_date'] ) {
+                $date_compare = strcmp( $a['due_date'], $b['due_date'] );
+                if ( $date_compare !== 0 ) {
+                    return $date_compare;
+                }
+            } elseif ( $a['due_date'] ) {
+                return -1;
+            } elseif ( $b['due_date'] ) {
+                return 1;
+            }
+
+            return strtotime( $b['created'] ) - strtotime( $a['created'] );
+        } );
+
+        return rest_ensure_response( $tasks );
+    }
+
+    /**
+     * POST /tasks
+     */
+    public function create_task( WP_REST_Request $request ) {
+        $body       = $request->get_json_params();
+        $title      = isset( $body['title'] ) ? sanitize_text_field( $body['title'] ) : '';
+        $description = isset( $body['description'] ) ? sanitize_textarea_field( $body['description'] ) : '';
+        $colour     = isset( $body['colour'] ) ? sanitize_key( $body['colour'] ) : '';
+        $due_date   = isset( $body['due_date'] ) ? sanitize_text_field( $body['due_date'] ) : '';
+
+        $validation = $this->validate_task_fields( $title, $colour, $due_date );
+        if ( is_wp_error( $validation ) ) {
+            return $validation;
+        }
+
+        $post_id = wp_insert_post( array(
+            'post_type'    => 'mm_task',
+            'post_title'   => $title,
+            'post_content' => $description,
+            'post_status'  => 'publish',
+        ), true );
+
+        if ( is_wp_error( $post_id ) ) {
+            return $post_id;
+        }
+
+        update_post_meta( $post_id, '_mm_task_colour', $colour );
+        update_post_meta( $post_id, '_mm_task_due_date', $due_date );
+        update_post_meta( $post_id, '_mm_task_completed', 0 );
+
+        return rest_ensure_response( $this->format_task( get_post( $post_id ) ) );
+    }
+
+    /**
+     * PUT /tasks/{id}
+     */
+    public function update_task( WP_REST_Request $request ) {
+        $post = $this->get_task_post( (int) $request->get_param( 'id' ) );
+        if ( is_wp_error( $post ) ) {
+            return $post;
+        }
+
+        $body        = $request->get_json_params();
+        $title       = isset( $body['title'] ) ? sanitize_text_field( $body['title'] ) : $post->post_title;
+        $description = isset( $body['description'] ) ? sanitize_textarea_field( $body['description'] ) : $post->post_content;
+        $colour      = isset( $body['colour'] ) ? sanitize_key( $body['colour'] ) : get_post_meta( $post->ID, '_mm_task_colour', true );
+        $due_date    = array_key_exists( 'due_date', $body ) ? sanitize_text_field( $body['due_date'] ) : get_post_meta( $post->ID, '_mm_task_due_date', true );
+
+        $validation = $this->validate_task_fields( $title, $colour, $due_date );
+        if ( is_wp_error( $validation ) ) {
+            return $validation;
+        }
+
+        $updated = wp_update_post( array(
+            'ID'           => $post->ID,
+            'post_title'   => $title,
+            'post_content' => $description,
+        ), true );
+
+        if ( is_wp_error( $updated ) ) {
+            return $updated;
+        }
+
+        update_post_meta( $post->ID, '_mm_task_colour', $colour );
+        update_post_meta( $post->ID, '_mm_task_due_date', $due_date );
+
+        return rest_ensure_response( $this->format_task( get_post( $post->ID ) ) );
+    }
+
+    /**
+     * DELETE /tasks/{id}
+     */
+    public function delete_task( WP_REST_Request $request ) {
+        $post = $this->get_task_post( (int) $request->get_param( 'id' ) );
+        if ( is_wp_error( $post ) ) {
+            return $post;
+        }
+
+        wp_delete_post( $post->ID, true );
+        return rest_ensure_response( array( 'deleted' => true, 'id' => $post->ID ) );
+    }
+
+    /**
+     * PUT /tasks/{id}/complete
+     */
+    public function toggle_task_complete( WP_REST_Request $request ) {
+        $post = $this->get_task_post( (int) $request->get_param( 'id' ) );
+        if ( is_wp_error( $post ) ) {
+            return $post;
+        }
+
+        $completed = (bool) get_post_meta( $post->ID, '_mm_task_completed', true );
+        update_post_meta( $post->ID, '_mm_task_completed', $completed ? 0 : 1 );
+
+        return rest_ensure_response( $this->format_task( $post ) );
     }
 
     /**
@@ -397,6 +569,74 @@ class MMPT_REST_API {
             'stale_projects'   => $stale,
             'overdue_projects' => $overdue,
         ) );
+    }
+
+    /**
+     * Validate fields shared by task create and update operations.
+     */
+    private function validate_task_fields( $title, $colour, $due_date ) {
+        if ( empty( $title ) ) {
+            return new WP_Error( 'missing_title', 'Task title is required.', array( 'status' => 400 ) );
+        }
+
+        if ( ! in_array( $colour, self::VALID_TASK_COLOURS, true ) ) {
+            return new WP_Error( 'invalid_colour', 'Choose a valid triage colour.', array( 'status' => 400 ) );
+        }
+
+        if ( $due_date && ! $this->is_valid_date( $due_date ) ) {
+            return new WP_Error( 'invalid_due_date', 'Due date must be a valid date in YYYY-MM-DD format.', array( 'status' => 400 ) );
+        }
+
+        return true;
+    }
+
+    /**
+     * Fetch a task post or return a consistent REST error.
+     */
+    private function get_task_post( $id ) {
+        $post = get_post( $id );
+        if ( ! $post || $post->post_type !== 'mm_task' ) {
+            return new WP_Error( 'not_found', 'Task not found.', array( 'status' => 404 ) );
+        }
+        return $post;
+    }
+
+    /**
+     * Validate a calendar date without accepting PHP's automatic rollover.
+     */
+    private function is_valid_date( $date ) {
+        $parsed = DateTimeImmutable::createFromFormat( '!Y-m-d', $date, wp_timezone() );
+        return $parsed && $parsed->format( 'Y-m-d' ) === $date;
+    }
+
+    /**
+     * Format a task for the frontend and calculate its calendar-day countdown.
+     */
+    private function format_task( WP_Post $post ) {
+        $due_date      = get_post_meta( $post->ID, '_mm_task_due_date', true );
+        $days_remaining = null;
+
+        if ( $due_date && $this->is_valid_date( $due_date ) ) {
+            $today          = new DateTimeImmutable( 'today', wp_timezone() );
+            $due            = DateTimeImmutable::createFromFormat( '!Y-m-d', $due_date, wp_timezone() );
+            $days_remaining = (int) $today->diff( $due )->format( '%r%a' );
+        }
+
+        $colour = get_post_meta( $post->ID, '_mm_task_colour', true );
+        if ( ! in_array( $colour, self::VALID_TASK_COLOURS, true ) ) {
+            $colour = 'yellow';
+        }
+
+        return array(
+            'id'             => $post->ID,
+            'title'          => $post->post_title,
+            'description'    => $post->post_content,
+            'colour'         => $colour,
+            'due_date'       => $due_date,
+            'days_remaining' => $days_remaining,
+            'completed'      => (bool) get_post_meta( $post->ID, '_mm_task_completed', true ),
+            'created'        => $post->post_date,
+        );
     }
 
     /**
