@@ -10,7 +10,9 @@
     /* ───── State ───── */
     var state = {
         projects: [],
+        tasks: [],
         filter: { status: 'publish', priority: '', sort: 'neglected', search: '' },
+        taskFilter: 'open',
         counts: { active: 0, archived: 0, milestones: 0 },
     };
 
@@ -38,6 +40,12 @@
 
     function formatDate(iso) {
         var d = new Date(iso);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function formatDueDate(date) {
+        var parts = date.split('-');
+        var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
         return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
@@ -237,6 +245,108 @@
         container.innerHTML = visible.map(renderCard).join('');
     }
 
+    var TASK_COLOURS = [
+        { key: 'red', label: 'Critical' },
+        { key: 'orange', label: 'Vital' },
+        { key: 'yellow', label: 'Advised' },
+        { key: 'green', label: 'If there’s time' },
+        { key: 'black', label: 'No chance' },
+    ];
+
+    function dueDateHtml(task) {
+        if (!task.due_date) return '';
+        var days = task.days_remaining;
+        var label;
+        var stateClass = '';
+        if (days < 0) {
+            label = 'Overdue by ' + Math.abs(days) + ' day' + (Math.abs(days) === 1 ? '' : 's');
+            stateClass = ' mmpt-task-due-overdue';
+        } else if (days === 0) {
+            label = 'Due today';
+            stateClass = ' mmpt-task-due-today';
+        } else {
+            label = days + ' day' + (days === 1 ? '' : 's') + ' left';
+        }
+        return '<span class="mmpt-task-due' + stateClass + '">' +
+            '<span>' + formatDueDate(task.due_date) + '</span>' +
+            '<strong>' + label + '</strong>' +
+        '</span>';
+    }
+
+    function renderTask(task) {
+        var description = task.description
+            ? '<p class="mmpt-task-description">' + esc(task.description) + '</p>'
+            : '';
+        var completeLabel = task.completed ? 'Reopen' : 'Complete';
+        var completedClass = task.completed ? ' mmpt-task-card-completed' : '';
+
+        return '<article class="mmpt-task-card mmpt-task-card-' + task.colour + completedClass + '" data-id="' + task.id + '">' +
+            '<div class="mmpt-task-card-main">' +
+                '<span class="mmpt-colour-dot mmpt-colour-dot-' + task.colour + '" aria-hidden="true"></span>' +
+                '<div class="mmpt-task-content">' +
+                    '<h4>' + esc(task.title) + '</h4>' +
+                    description +
+                '</div>' +
+                dueDateHtml(task) +
+            '</div>' +
+            '<div class="mmpt-task-actions">' +
+                '<button type="button" class="mmpt-btn mmpt-btn-sm mmpt-btn-primary mmpt-task-action-complete" data-id="' + task.id + '">' + completeLabel + '</button>' +
+                '<button type="button" class="mmpt-btn mmpt-btn-sm mmpt-btn-secondary mmpt-task-action-edit" data-id="' + task.id + '">Edit</button>' +
+                '<button type="button" class="mmpt-btn mmpt-btn-sm mmpt-btn-ghost mmpt-task-action-delete" data-id="' + task.id + '">Delete</button>' +
+            '</div>' +
+        '</article>';
+    }
+
+    function sortTasks(tasks) {
+        return tasks.slice().sort(function (a, b) {
+            if (a.due_date && b.due_date) {
+                var dateCompare = a.due_date.localeCompare(b.due_date);
+                if (dateCompare) return dateCompare;
+            } else if (a.due_date) {
+                return -1;
+            } else if (b.due_date) {
+                return 1;
+            }
+            return new Date(b.created) - new Date(a.created);
+        });
+    }
+
+    function renderTaskCounts() {
+        var open = state.tasks.filter(function (task) { return !task.completed; }).length;
+        var completed = state.tasks.length - open;
+        $('#mmpt-count-tasks-open').textContent = open;
+        $('#mmpt-count-tasks-completed').textContent = completed;
+        $('#mmpt-nav-task-count').textContent = open;
+    }
+
+    function renderTasks() {
+        var container = $('#mmpt-tasks');
+        var visible = state.tasks.filter(function (task) {
+            if (state.taskFilter === 'open') return !task.completed;
+            if (state.taskFilter === 'completed') return task.completed;
+            return true;
+        });
+
+        renderTaskCounts();
+
+        if (!visible.length) {
+            container.innerHTML = '<div class="mmpt-empty">No tasks found.</div>';
+            return;
+        }
+
+        container.innerHTML = TASK_COLOURS.map(function (colour) {
+            var tasks = sortTasks(visible.filter(function (task) { return task.colour === colour.key; }));
+            if (!tasks.length) return '';
+            return '<section class="mmpt-task-group mmpt-task-group-' + colour.key + '">' +
+                '<div class="mmpt-task-group-heading">' +
+                    '<span><i class="mmpt-colour-dot mmpt-colour-dot-' + colour.key + '"></i>' + colour.label + '</span>' +
+                    '<span class="mmpt-badge-count">' + tasks.length + '</span>' +
+                '</div>' +
+                '<div class="mmpt-task-list">' + tasks.map(renderTask).join('') + '</div>' +
+            '</section>';
+        }).join('');
+    }
+
     function refresh() {
         renderCounts();
         renderProjects();
@@ -250,6 +360,16 @@
         }).catch(function (err) {
             $('#mmpt-projects').innerHTML = '<div class="mmpt-empty">Error loading projects.</div>';
             console.error('MMPT load error:', err);
+        });
+    }
+
+    function loadTasks() {
+        req('GET', 'tasks').then(function (data) {
+            state.tasks = data;
+            renderTasks();
+        }).catch(function (err) {
+            $('#mmpt-tasks').innerHTML = '<div class="mmpt-empty">Error loading tasks.</div>';
+            console.error('MMPT task load error:', err);
         });
     }
 
@@ -274,9 +394,125 @@
         $('#mmpt-submit-project').disabled = !(name && end && rat);
     }
 
+    function validateTaskForm() {
+        var title = $('#mmpt-task-title').value.trim();
+        var colour = $('#mmpt-task-colour').value;
+        $('#mmpt-submit-task').disabled = !(title && colour);
+    }
+
     /* ───── Event Binding ───── */
     function init() {
         loadProjects();
+        loadTasks();
+
+        /* Main Sections */
+        $$('.mmpt-main-nav-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                var section = item.dataset.section;
+                $$('.mmpt-main-nav-item').forEach(function (navItem) {
+                    navItem.classList.toggle('mmpt-main-nav-item-active', navItem === item);
+                });
+                $('#mmpt-section-projects').hidden = section !== 'projects';
+                $('#mmpt-section-triage').hidden = section !== 'triage';
+            });
+        });
+
+        /* New Task Button */
+        $('#mmpt-new-task-btn').addEventListener('click', function () {
+            $('#mmpt-form-task').reset();
+            $('#mmpt-task-edit-id').value = '';
+            $('#mmpt-modal-task-title').textContent = 'Add Task';
+            $('#mmpt-submit-task').textContent = 'Add Task';
+            $('#mmpt-submit-task').disabled = true;
+            openModal('mmpt-modal-task');
+        });
+
+        ['mmpt-task-title', 'mmpt-task-colour'].forEach(function (id) {
+            $('#' + id).addEventListener('input', validateTaskForm);
+            $('#' + id).addEventListener('change', validateTaskForm);
+        });
+
+        /* Task Form Submit */
+        $('#mmpt-form-task').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var editId = $('#mmpt-task-edit-id').value;
+            var payload = {
+                title: $('#mmpt-task-title').value.trim(),
+                description: $('#mmpt-task-description').value.trim(),
+                due_date: $('#mmpt-task-due-date').value,
+                colour: $('#mmpt-task-colour').value,
+            };
+
+            req(editId ? 'PUT' : 'POST', editId ? 'tasks/' + editId : 'tasks', payload).then(function (task) {
+                var idx = state.tasks.findIndex(function (item) { return item.id === task.id; });
+                if (idx === -1) state.tasks.push(task);
+                else state.tasks[idx] = task;
+                closeModal('mmpt-modal-task');
+                renderTasks();
+            }).catch(function (err) {
+                alert(err.message || 'Error saving task.');
+            });
+        });
+
+        /* Task Status Tabs */
+        $$('.mmpt-task-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                $$('.mmpt-task-tab').forEach(function (item) { item.classList.remove('mmpt-tab-active'); });
+                tab.classList.add('mmpt-tab-active');
+                state.taskFilter = tab.dataset.taskStatus;
+                renderTasks();
+            });
+        });
+
+        /* Task Actions */
+        $('#mmpt-tasks').addEventListener('click', function (e) {
+            var button = e.target.closest('button');
+            if (!button) return;
+            var id = parseInt(button.dataset.id, 10);
+            var task = state.tasks.find(function (item) { return item.id === id; });
+            if (!task) return;
+
+            if (button.classList.contains('mmpt-task-action-complete')) {
+                req('PUT', 'tasks/' + id + '/complete').then(function (updated) {
+                    var idx = state.tasks.findIndex(function (item) { return item.id === updated.id; });
+                    if (idx !== -1) state.tasks[idx] = updated;
+                    renderTasks();
+                }).catch(function (err) {
+                    alert(err.message || 'Error updating task.');
+                });
+                return;
+            }
+
+            if (button.classList.contains('mmpt-task-action-edit')) {
+                $('#mmpt-task-edit-id').value = task.id;
+                $('#mmpt-task-title').value = task.title;
+                $('#mmpt-task-description').value = task.description || '';
+                $('#mmpt-task-due-date').value = task.due_date || '';
+                $('#mmpt-task-colour').value = task.colour;
+                $('#mmpt-modal-task-title').textContent = 'Edit Task';
+                $('#mmpt-submit-task').textContent = 'Save Changes';
+                $('#mmpt-submit-task').disabled = false;
+                openModal('mmpt-modal-task');
+                return;
+            }
+
+            if (button.classList.contains('mmpt-task-action-delete')) {
+                $('#mmpt-task-delete-id').value = task.id;
+                $('#mmpt-task-delete-name').textContent = task.title;
+                openModal('mmpt-modal-task-delete');
+            }
+        });
+
+        $('#mmpt-confirm-task-delete').addEventListener('click', function () {
+            var id = parseInt($('#mmpt-task-delete-id').value, 10);
+            req('DELETE', 'tasks/' + id).then(function () {
+                state.tasks = state.tasks.filter(function (task) { return task.id !== id; });
+                closeModal('mmpt-modal-task-delete');
+                renderTasks();
+            }).catch(function (err) {
+                alert(err.message || 'Error deleting task.');
+            });
+        });
 
         /* New Project Button */
         $('#mmpt-new-btn').addEventListener('click', function () {
@@ -327,9 +563,9 @@
         });
 
         /* Tabs */
-        $$('.mmpt-tab').forEach(function (tab) {
+        $$('.mmpt-tab[data-status]').forEach(function (tab) {
             tab.addEventListener('click', function () {
-                $$('.mmpt-tab').forEach(function (t) { t.classList.remove('mmpt-tab-active'); });
+                $$('.mmpt-tab[data-status]').forEach(function (t) { t.classList.remove('mmpt-tab-active'); });
                 tab.classList.add('mmpt-tab-active');
                 state.filter.status = tab.dataset.status;
                 renderProjects();

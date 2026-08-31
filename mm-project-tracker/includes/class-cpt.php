@@ -20,5 +20,17 @@ class MMPT_CPT {
             'supports'     => array( 'title' ),
             'capability_type' => 'post',
         ) );
+
+        register_post_type( 'mm_task', array(
+            'labels'       => array(
+                'name'          => 'Tasks',
+                'singular_name' => 'Task',
+            ),
+            'public'       => false,
+            'show_ui'      => false,
+            'show_in_rest' => false,
+            'supports'     => array( 'title', 'editor' ),
+            'capability_type' => 'post',
+        ) );
     }
 }
