@@ -1,8 +1,21 @@
-/* MM Project Tracker — Frontend Styles
+/* MM Project Tracker — Frontend Styles v1.1
    Design: "Ink & Silver" for mariuszmirecki.pl
+
    Chrome is neutral (graphite / dark silver). Colour is reserved
-   entirely for status meaning, so nothing here can collide with
-   The Blue Tree's blue.
+   entirely for status meaning. Blue never appears — that belongs
+   to The Blue Tree.
+
+   v1.1 changes:
+   - Removed the prefers-color-scheme block. It flipped the tokens
+     against Divi's light page and made the whole plugin unreadable.
+     An opt-in dark theme can be added later behind a .mmpt-dark class.
+   - Explicit font-family on h2/h3/h4 — Divi styles headings directly
+     and beats an inherited value.
+   - Card header rebuilt with the chevron positioned out of the flow.
+     The old version had two competing spacers and a reordered name.
+   - All literal hex moved into tokens.
+   - Muted text darkened to clear WCAG AA on white and on every tint.
+
    All classes prefixed mmpt- to avoid Divi conflicts. */
 
 /* ─────────────────────────────────────────────
@@ -18,19 +31,25 @@
     /* Ink — all structural colour */
     --mmpt-ink:        #14161A;
     --mmpt-ink-2:      #3D444D;
-    --mmpt-ink-3:      #767E8A;
-    --mmpt-ink-4:      #9BA2AD;
+    --mmpt-ink-3:      #5C636D;  /* was #767E8A — now 5.8:1 on white */
+    --mmpt-ink-4:      #6B727C;  /* was #9BA2AD — now 4.7:1 on white */
 
     /* Silver — interactive chrome */
     --mmpt-silver:       #545B64;
     --mmpt-silver-hover: #434951;
     --mmpt-silver-soft:  #EDEFF2;
+    --mmpt-on-silver:    #FFFFFF;
 
     /* Surfaces */
-    --mmpt-canvas:  #F6F7F9;
-    --mmpt-surface: #FFFFFF;
-    --mmpt-line:    #E4E7EC;
-    --mmpt-line-2:  #D6DAE1;
+    --mmpt-canvas:   #F6F7F9;
+    --mmpt-surface:  #FFFFFF;
+    --mmpt-line:     #E4E7EC;
+    --mmpt-line-2:   #D6DAE1;
+    --mmpt-hairline: rgba(20, 22, 26, 0.09);
+
+    /* Chip grounds */
+    --mmpt-chip-on-tint:  #FFFFFF;  /* chips sitting on a tinted card */
+    --mmpt-chip-on-white: #F1F3F5;  /* chips sitting on an untinted card */
 
     /* Status rails */
     --mmpt-rail-neutral: #C3C8D0;
@@ -41,7 +60,7 @@
     --mmpt-rail-deep:    #8C201C;
     --mmpt-rail-black:   #14161A;
 
-    /* Status tints — card backgrounds (always light: dark text stays legible) */
+    /* Status tints — card backgrounds. Always light: dark text stays legible. */
     --mmpt-tint-green:   #E9F3EC;
     --mmpt-tint-orange:  #FCF1E2;
     --mmpt-tint-yellow:  #FBF4DC;
@@ -57,7 +76,7 @@
     --mmpt-edge-deep:    #E3A9A5;
     --mmpt-edge-black:   #CFD2D7;
 
-    /* Status text — for chip text on white chips */
+    /* Status text — for semantic chips, which sit on a white ground */
     --mmpt-text-green:   #125C34;
     --mmpt-text-orange:  #7A4A08;
     --mmpt-text-yellow:  #6E5403;
@@ -88,7 +107,36 @@
 }
 
 /* ─────────────────────────────────────────────
-   2. Section switcher
+   2. Theme guards
+   Divi styles h1–h6, buttons and form controls directly, so an
+   inherited font-family loses. These re-assert ours by specificity
+   rather than !important.
+   ───────────────────────────────────────────── */
+.mmpt-app h2,
+.mmpt-app h3,
+.mmpt-app h4,
+.mmpt-app p,
+.mmpt-app button,
+.mmpt-app input,
+.mmpt-app select,
+.mmpt-app textarea,
+.mmpt-app label {
+    font-family: var(--mmpt-font);
+}
+.mmpt-app h2,
+.mmpt-app h3,
+.mmpt-app h4 {
+    text-transform: none;
+    letter-spacing: normal;
+    line-height: 1.3;
+    padding: 0;
+}
+.mmpt-app .mmpt-chip-version {
+    font-family: var(--mmpt-font-mono);
+}
+
+/* ─────────────────────────────────────────────
+   3. Section switcher
    ───────────────────────────────────────────── */
 .mmpt-main-nav {
     display: grid;
@@ -110,7 +158,6 @@
     border-radius: 7px;
     background: transparent;
     color: var(--mmpt-ink-3);
-    font-family: inherit;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -124,7 +171,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   3. Header
+   4. Header
    ───────────────────────────────────────────── */
 .mmpt-header {
     display: flex;
@@ -149,7 +196,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   4. Buttons
+   5. Buttons
    ───────────────────────────────────────────── */
 .mmpt-btn {
     display: inline-flex;
@@ -160,19 +207,18 @@
     padding: 11px 18px;
     border: none;
     border-radius: var(--mmpt-radius);
-    font-family: inherit;
     font-size: 14px;
     font-weight: 500;
     line-height: 1.2;
+    text-transform: none;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
 .mmpt-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.mmpt-btn:active:not(:disabled) { transform: translateY(0.5px); }
 
 .mmpt-btn-primary {
     background: var(--mmpt-silver);
-    color: #FFFFFF;
+    color: var(--mmpt-on-silver);
 }
 .mmpt-btn-primary:hover:not(:disabled) { background: var(--mmpt-silver-hover); }
 
@@ -188,7 +234,7 @@
 
 .mmpt-btn-danger {
     background: var(--mmpt-rail-red);
-    color: #FFFFFF;
+    color: var(--mmpt-on-silver);
 }
 .mmpt-btn-danger:hover:not(:disabled) { background: var(--mmpt-rail-deep); }
 
@@ -197,7 +243,7 @@
     color: var(--mmpt-ink-3);
 }
 .mmpt-btn-ghost:hover:not(:disabled) {
-    background: rgba(20, 22, 26, 0.05);
+    background: rgba(20, 22, 26, 0.06);
     color: var(--mmpt-ink);
 }
 
@@ -208,7 +254,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   5. Filters and tabs
+   6. Filters and tabs
    ───────────────────────────────────────────── */
 .mmpt-filters { margin-bottom: 16px; }
 
@@ -217,6 +263,7 @@
     gap: 6px;
     margin-bottom: 10px;
     padding-bottom: 2px;
+    border-bottom: none;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
@@ -233,7 +280,6 @@
     border: 1px solid var(--mmpt-line);
     border-radius: 20px;
     background: var(--mmpt-surface);
-    font-family: inherit;
     font-size: 13px;
     font-weight: 500;
     color: var(--mmpt-ink-2);
@@ -245,7 +291,7 @@
 .mmpt-tab-active {
     background: var(--mmpt-silver);
     border-color: var(--mmpt-silver);
-    color: #FFFFFF;
+    color: var(--mmpt-on-silver);
 }
 
 .mmpt-badge-count {
@@ -260,9 +306,9 @@
 }
 .mmpt-tab-active .mmpt-badge-count,
 .mmpt-main-nav-item-active .mmpt-badge-count {
-    background: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.24);
 }
-.mmpt-tab-active .mmpt-badge-count { color: #FFFFFF; }
+.mmpt-tab-active .mmpt-badge-count { color: var(--mmpt-on-silver); }
 
 .mmpt-filter-row {
     display: flex;
@@ -276,7 +322,6 @@
     border: 1px solid var(--mmpt-line-2);
     border-radius: var(--mmpt-radius);
     background: var(--mmpt-surface);
-    font-family: inherit;
     font-size: 16px; /* 16px stops iOS Safari zooming on focus */
     color: var(--mmpt-ink);
 }
@@ -289,7 +334,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   6. Project cards
+   7. Project cards
    ───────────────────────────────────────────── */
 .mmpt-projects {
     display: flex;
@@ -311,7 +356,6 @@
     border-left: var(--mmpt-rail) solid var(--mmpt-rail-neutral);
     border-radius: 0; /* square: rounded corners break against a single-sided rail */
     overflow: hidden;
-    transition: border-color 0.15s;
 }
 
 /* Rail colour from priority — the fallback when no cadence is set */
@@ -359,45 +403,46 @@
     border-left-color: var(--mmpt-rail-deep);
 }
 
+/* Card header: name on its own line, chips wrapping beneath it, chevron
+   pinned top-right and out of the flow. One declaration, no reordering,
+   no competing spacers — the v1.0 version had both and left dead space. */
 .mmpt-card-header {
+    position: relative;
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 13px 14px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 13px 38px 13px 14px;
     cursor: pointer;
 }
 .mmpt-card-name {
     flex: 1 1 100%;
-    order: -1;
-    margin-bottom: 6px;
     font-size: 15px;
     font-weight: 500;
     color: var(--mmpt-ink);
     overflow-wrap: anywhere;
 }
-.mmpt-card-spacer { flex: 1; }
+.mmpt-card-spacer { display: none; }
 .mmpt-card-chevron {
-    order: -1;
-    margin-left: auto;
+    position: absolute;
+    top: 13px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
     color: var(--mmpt-ink-4);
     font-size: 12px;
-    line-height: 1.6;
+    line-height: 1;
     transition: transform 0.2s;
 }
 .mmpt-card.mmpt-expanded .mmpt-card-chevron { transform: rotate(180deg); }
 
-/* Header becomes a wrapping chip row under the title */
-.mmpt-card-header {
-    flex-wrap: wrap;
-    gap: 5px;
-    align-items: center;
-}
-.mmpt-card-name { flex-basis: calc(100% - 24px); }
-
 /* ─────────────────────────────────────────────
-   7. Chips — always white on a tinted card,
-   grey on an untinted one. Semantic chips carry
-   their colour in the text, never the background.
+   8. Chips — white on a tinted card, grey on an
+   untinted one. Semantic chips carry their colour
+   in the text, never the background.
    ───────────────────────────────────────────── */
 .mmpt-chip,
 .mmpt-chip-staleness,
@@ -405,26 +450,26 @@
     display: inline-block;
     padding: 3px 8px;
     border-radius: 5px;
-    background: var(--mmpt-surface);
+    background: var(--mmpt-chip-on-tint);
     color: var(--mmpt-ink-2);
     font-size: 11.5px;
     font-weight: 500;
+    line-height: 1.45;
     white-space: nowrap;
 }
-/* On an untinted (plain white) card, chips need a grey ground instead */
+/* An untinted card is plain white, so its chips need a grey ground */
 .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip,
 .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-staleness,
 .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-commitment {
-    background: #F3F4F6;
+    background: var(--mmpt-chip-on-white);
 }
 
 .mmpt-chip-version {
-    font-family: var(--mmpt-font-mono);
     font-size: 11px;
     letter-spacing: -0.01em;
 }
 .mmpt-chip-category {
-    text-transform: none; /* was uppercase */
+    text-transform: none;
     letter-spacing: 0;
 }
 
@@ -446,12 +491,12 @@
 .mmpt-commitment-overdue  { color: var(--mmpt-text-red); }
 
 /* ─────────────────────────────────────────────
-   8. Expanded card body
+   9. Expanded card body
    ───────────────────────────────────────────── */
 .mmpt-card-body {
     display: none;
     padding: 0 14px 14px;
-    border-top: 1px solid rgba(20, 22, 26, 0.07);
+    border-top: 1px solid var(--mmpt-hairline);
 }
 .mmpt-card.mmpt-expanded .mmpt-card-body { display: block; }
 
@@ -460,7 +505,7 @@
     margin-bottom: 3px;
     font-size: 12px;
     font-weight: 500;
-    text-transform: none; /* was uppercase */
+    text-transform: none;
     letter-spacing: 0;
     color: var(--mmpt-ink-3);
 }
@@ -474,7 +519,7 @@
 .mmpt-timeline {
     margin-top: 10px;
     padding-left: 16px;
-    border-left: 1px solid rgba(20, 22, 26, 0.14);
+    border-left: 1px solid var(--mmpt-hairline);
 }
 .mmpt-timeline-item {
     position: relative;
@@ -508,7 +553,6 @@
     padding: 10px 0;
     border: none;
     background: none;
-    font-family: inherit;
     font-size: 13px;
     font-weight: 500;
     color: var(--mmpt-ink-2);
@@ -523,7 +567,7 @@
     gap: 6px;
     margin-top: 14px;
     padding-top: 12px;
-    border-top: 1px solid rgba(20, 22, 26, 0.07);
+    border-top: 1px solid var(--mmpt-hairline);
 }
 .mmpt-card-created {
     margin-top: 10px;
@@ -532,7 +576,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   9. Task Triage — same card grammar as projects
+   10. Task Triage — same card grammar as projects
    ───────────────────────────────────────────── */
 .mmpt-triage-legend {
     display: flex;
@@ -581,7 +625,7 @@
     color: var(--mmpt-ink-2);
     font-size: 13px;
     font-weight: 500;
-    text-transform: none; /* was uppercase */
+    text-transform: none;
     letter-spacing: 0;
 }
 .mmpt-task-list {
@@ -652,16 +696,16 @@
     align-items: center;
     gap: 6px;
     flex: 0 0 auto;
-    margin-top: 8px;
+    margin-top: 6px;
     padding: 3px 8px;
     border-radius: 5px;
-    background: var(--mmpt-surface);
+    background: var(--mmpt-chip-on-tint);
     font-size: 11.5px;
     color: var(--mmpt-ink-3);
     white-space: nowrap;
 }
 .mmpt-task-card:not([class*="mmpt-task-card-red"]):not([class*="mmpt-task-card-orange"]):not([class*="mmpt-task-card-yellow"]):not([class*="mmpt-task-card-green"]):not([class*="mmpt-task-card-black"]) .mmpt-task-due {
-    background: #F3F4F6;
+    background: var(--mmpt-chip-on-white);
 }
 .mmpt-task-due strong {
     font-weight: 500;
@@ -677,11 +721,11 @@
     gap: 6px;
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid rgba(20, 22, 26, 0.07);
+    border-top: 1px solid var(--mmpt-hairline);
 }
 
 /* ─────────────────────────────────────────────
-   10. Modals
+   11. Modals
    ───────────────────────────────────────────── */
 .mmpt-modal {
     position: fixed;
@@ -749,7 +793,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   11. Forms
+   12. Forms
    ───────────────────────────────────────────── */
 .mmpt-form {
     display: flex;
@@ -766,6 +810,8 @@
 .mmpt-field label {
     font-size: 13px;
     font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
     color: var(--mmpt-ink-2);
 }
 .mmpt-field input,
@@ -776,7 +822,6 @@
     border: 1px solid var(--mmpt-line-2);
     border-radius: var(--mmpt-radius);
     background: var(--mmpt-surface);
-    font-family: inherit;
     font-size: 16px; /* keeps iOS from zooming */
     color: var(--mmpt-ink);
     transition: border-color 0.15s, box-shadow 0.15s;
@@ -813,7 +858,7 @@
 .mmpt-form-grid .mmpt-field label {
     font-size: 13px;
     font-weight: 500;
-    text-transform: none; /* was uppercase */
+    text-transform: none;
     letter-spacing: 0;
     color: var(--mmpt-ink-2);
 }
@@ -833,7 +878,6 @@
     border: 1px solid var(--mmpt-line-2);
     border-radius: var(--mmpt-radius);
     background: var(--mmpt-surface);
-    font-family: inherit;
     font-size: 14px;
     font-weight: 500;
     color: var(--mmpt-ink-2);
@@ -845,11 +889,11 @@
 .mmpt-toggle-active {
     border-color: var(--mmpt-silver);
     background: var(--mmpt-silver);
-    color: #FFFFFF;
+    color: var(--mmpt-on-silver);
 }
 
 /* ─────────────────────────────────────────────
-   12. Footer
+   13. Footer
    ───────────────────────────────────────────── */
 .mmpt-footer {
     display: flex;
@@ -868,7 +912,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   13. Tablet — 768px and up
+   14. Tablet — 768px and up
    ───────────────────────────────────────────── */
 @media (min-width: 768px) {
     .mmpt-app {
@@ -881,38 +925,31 @@
     }
     .mmpt-title { font-size: 26px; }
 
-    /* Two-column card grids — the whole reason for the wider canvas */
+    /* Two-column card grids. align-self:start on the children keeps each
+       card at its natural height instead of stretching to match its row
+       partner — align-items on the container alone was being overridden. */
     .mmpt-projects,
     .mmpt-task-list {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 10px;
         align-items: start;
     }
+    .mmpt-projects > *,
+    .mmpt-task-list > * { align-self: start; }
+
     /* An expanded project card takes the full width */
     .mmpt-card.mmpt-expanded { grid-column: 1 / -1; }
-
-    .mmpt-card-name { flex-basis: auto; margin-bottom: 0; }
-    .mmpt-card-header { flex-wrap: wrap; }
-    .mmpt-card-chevron { order: 0; }
 
     .mmpt-task-card-main { flex-wrap: nowrap; }
     .mmpt-task-due { margin-top: 0; }
 }
 
-@media (min-width: 1024px) {
-    .mmpt-projects,
-    .mmpt-task-list {
-        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    }
-}
-
 /* ─────────────────────────────────────────────
-   14. Phone — under 640px
+   15. Phone — under 640px
    ───────────────────────────────────────────── */
 @media (max-width: 639px) {
     .mmpt-app { padding: 16px 12px calc(24px + env(safe-area-inset-bottom)); }
-    .mmpt-main-nav { grid-template-columns: 1fr 1fr; }
     .mmpt-header { align-items: flex-start; }
     .mmpt-btn { padding: 11px 14px; }
     .mmpt-filter-row > * { flex: 1 1 100%; }
@@ -946,58 +983,6 @@
     .mmpt-toggle-group { flex-direction: column; }
     .mmpt-card-actions .mmpt-btn,
     .mmpt-task-actions .mmpt-btn { flex: 1 1 calc(50% - 3px); }
-}
-
-/* ─────────────────────────────────────────────
-   15. Dark mode
-   ───────────────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-    .mmpt-app {
-        --mmpt-ink:        #F0F2F5;
-        --mmpt-ink-2:      #C2C8D0;
-        --mmpt-ink-3:      #8C94A0;
-        --mmpt-ink-4:      #6C7480;
-
-        --mmpt-silver:       #767E8A;
-        --mmpt-silver-hover: #878F9B;
-        --mmpt-silver-soft:  #24272C;
-
-        --mmpt-canvas:  #16181C;
-        --mmpt-surface: #1D2024;
-        --mmpt-line:    #2E3238;
-        --mmpt-line-2:  #3B4047;
-
-        --mmpt-tint-green:   #16281E;
-        --mmpt-tint-orange:  #2C2113;
-        --mmpt-tint-yellow:  #2A2513;
-        --mmpt-tint-red:     #2C1817;
-        --mmpt-tint-deep:    #3A1918;
-        --mmpt-tint-black:   #202226;
-
-        --mmpt-edge-green:   #2C4A38;
-        --mmpt-edge-orange:  #4A3820;
-        --mmpt-edge-yellow:  #473F20;
-        --mmpt-edge-red:     #4A2926;
-        --mmpt-edge-deep:    #5C2A27;
-        --mmpt-edge-black:   #33363C;
-
-        --mmpt-text-green:   #7FCB9F;
-        --mmpt-text-orange:  #E5A85E;
-        --mmpt-text-yellow:  #D8BC5A;
-        --mmpt-text-red:     #EC8A85;
-    }
-    .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip,
-    .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-staleness,
-    .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-commitment {
-        background: #2A2E34;
-    }
-    .mmpt-btn-primary { color: #14161A; }
-    .mmpt-toggle-active { color: #14161A; }
-    .mmpt-tab-active { color: #14161A; }
-    .mmpt-card-body,
-    .mmpt-card-actions,
-    .mmpt-task-actions { border-top-color: rgba(255, 255, 255, 0.09); }
-    .mmpt-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.07); }
 }
 
 /* ─────────────────────────────────────────────
