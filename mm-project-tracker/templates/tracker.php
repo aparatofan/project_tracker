@@ -35,7 +35,7 @@
                     <option value="version">By Version</option>
                     <option value="newest">Newest First</option>
                 </select>
-                <input type="text" id="mmpt-search" class="mmpt-search" placeholder="&#128269; Search projects..." />
+                <input type="text" id="mmpt-search" class="mmpt-search" placeholder="Search projects" />
             </div>
         </div>
 
@@ -148,7 +148,7 @@
         <div class="mmpt-modal-overlay"></div>
         <div class="mmpt-modal-content">
             <div class="mmpt-modal-header">
-                <h3 id="mmpt-modal-project-title">&#127919; Begin With The End In Mind</h3>
+                <h3 id="mmpt-modal-project-title">Begin With The End In Mind</h3>
                 <button class="mmpt-modal-close">&times;</button>
             </div>
             <p class="mmpt-modal-subtitle" id="mmpt-modal-project-subtitle">Before you start, define where you want to end up and why this matters.</p>
@@ -161,11 +161,11 @@
                             <input type="text" id="mmpt-name" required placeholder="Project name" />
                         </div>
                         <div class="mmpt-field">
-                            <label for="mmpt-end-in-mind">The End I Have In Mind *</label>
+                            <label for="mmpt-end-in-mind">The end I have in mind *</label>
                             <textarea id="mmpt-end-in-mind" required placeholder="What does 'done' look like?" rows="5"></textarea>
                         </div>
                         <div class="mmpt-field">
-                            <label for="mmpt-rationale">Why Am I Starting This? *</label>
+                            <label for="mmpt-rationale">Why am I starting this? *</label>
                             <textarea id="mmpt-rationale" required placeholder="How will this help my work or life?" rows="5"></textarea>
                         </div>
                     </div>
@@ -183,7 +183,7 @@
                             <input type="text" id="mmpt-category" placeholder="TBT, PNA, NET, Personal..." />
                         </div>
                         <div class="mmpt-field">
-                            <label for="mmpt-cadence">Commitment Cadence</label>
+                            <label for="mmpt-cadence">Commitment cadence</label>
                             <select id="mmpt-cadence">
                                 <option value="none" selected>No recurring commitment</option>
                                 <option value="daily">Daily</option>
@@ -194,11 +194,11 @@
                             </select>
                         </div>
                         <div class="mmpt-field">
-                            <label for="mmpt-cadence-label">Cadence Description</label>
+                            <label for="mmpt-cadence-label">Cadence description</label>
                             <input type="text" id="mmpt-cadence-label" placeholder="e.g. 1 lesson per week" />
                         </div>
                         <div class="mmpt-field">
-                            <label for="mmpt-stale-days">Stale After (days)</label>
+                            <label for="mmpt-stale-days">Stale after (days)</label>
                             <input type="number" id="mmpt-stale-days" value="14" min="1" />
                         </div>
                     </div>
@@ -226,8 +226,8 @@
                 <div class="mmpt-field">
                     <label>Type</label>
                     <div class="mmpt-toggle-group">
-                        <button type="button" class="mmpt-toggle mmpt-toggle-active" data-type="minor">&#128295; Minor Update</button>
-                        <button type="button" class="mmpt-toggle" data-type="major">&#128640; Major Milestone</button>
+                        <button type="button" class="mmpt-toggle mmpt-toggle-active" data-type="minor">Minor update</button>
+                        <button type="button" class="mmpt-toggle" data-type="major">Major milestone</button>
                     </div>
                 </div>
                 <div class="mmpt-field">

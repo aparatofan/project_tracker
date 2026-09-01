@@ -1,434 +1,498 @@
-/* MM Project Tracker — Frontend Styles */
-/* All classes prefixed with mmpt- to avoid Divi conflicts */
+/* MM Project Tracker — Frontend Styles
+   Design: "Ink & Silver" for mariuszmirecki.pl
+   Chrome is neutral (graphite / dark silver). Colour is reserved
+   entirely for status meaning, so nothing here can collide with
+   The Blue Tree's blue.
+   All classes prefixed mmpt- to avoid Divi conflicts. */
 
+/* ─────────────────────────────────────────────
+   1. Tokens — retune the whole plugin from here
+   ───────────────────────────────────────────── */
 .mmpt-app {
+    /* Type */
+    --mmpt-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    --mmpt-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+                      Consolas, monospace;
+
+    /* Ink — all structural colour */
+    --mmpt-ink:        #14161A;
+    --mmpt-ink-2:      #3D444D;
+    --mmpt-ink-3:      #767E8A;
+    --mmpt-ink-4:      #9BA2AD;
+
+    /* Silver — interactive chrome */
+    --mmpt-silver:       #545B64;
+    --mmpt-silver-hover: #434951;
+    --mmpt-silver-soft:  #EDEFF2;
+
+    /* Surfaces */
+    --mmpt-canvas:  #F6F7F9;
+    --mmpt-surface: #FFFFFF;
+    --mmpt-line:    #E4E7EC;
+    --mmpt-line-2:  #D6DAE1;
+
+    /* Status rails */
+    --mmpt-rail-neutral: #C3C8D0;
+    --mmpt-rail-green:   #1E8A50;
+    --mmpt-rail-orange:  #E07B18;
+    --mmpt-rail-yellow:  #C99A06;
+    --mmpt-rail-red:     #D1332E;
+    --mmpt-rail-deep:    #8C201C;
+    --mmpt-rail-black:   #14161A;
+
+    /* Status tints — card backgrounds (always light: dark text stays legible) */
+    --mmpt-tint-green:   #E9F3EC;
+    --mmpt-tint-orange:  #FCF1E2;
+    --mmpt-tint-yellow:  #FBF4DC;
+    --mmpt-tint-red:     #FBEAE9;
+    --mmpt-tint-deep:    #F6D9D7;
+    --mmpt-tint-black:   #ECEDEF;
+
+    /* Status tint borders */
+    --mmpt-edge-green:   #BFDCC9;
+    --mmpt-edge-orange:  #EFD5AE;
+    --mmpt-edge-yellow:  #EBDCA6;
+    --mmpt-edge-red:     #F1C9C6;
+    --mmpt-edge-deep:    #E3A9A5;
+    --mmpt-edge-black:   #CFD2D7;
+
+    /* Status text — for chip text on white chips */
+    --mmpt-text-green:   #125C34;
+    --mmpt-text-orange:  #7A4A08;
+    --mmpt-text-yellow:  #6E5403;
+    --mmpt-text-red:     #8C201C;
+
+    /* Geometry */
+    --mmpt-rail: 4px;
+    --mmpt-radius: 8px;
+    --mmpt-radius-lg: 14px;
+    --mmpt-tap: 44px;
+
     max-width: 900px;
     margin: 0 auto;
-    padding: 24px 16px;
-    font-family: inherit;
-    color: #1E293B;
+    padding: 20px 14px calc(20px + env(safe-area-inset-bottom));
+    font-family: var(--mmpt-font);
+    font-size: 15px;
+    color: var(--mmpt-ink);
     line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
 }
-.mmpt-app *, .mmpt-app *::before, .mmpt-app *::after {
-    box-sizing: border-box;
-}
-.mmpt-app [hidden] {
-    display: none !important;
+.mmpt-app *,
+.mmpt-app *::before,
+.mmpt-app *::after { box-sizing: border-box; }
+.mmpt-app [hidden] { display: none !important; }
+.mmpt-app :focus-visible {
+    outline: 2px solid var(--mmpt-silver);
+    outline-offset: 2px;
 }
 
-/* Main sections */
+/* ─────────────────────────────────────────────
+   2. Section switcher
+   ───────────────────────────────────────────── */
 .mmpt-main-nav {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    padding: 6px;
-    margin-bottom: 28px;
-    border: 1px solid #E2E8F0;
-    border-radius: 12px;
-    background: #F8FAFC;
+    gap: 4px;
+    padding: 3px;
+    margin-bottom: 22px;
+    border-radius: 10px;
+    background: var(--mmpt-silver-soft);
 }
 .mmpt-main-nav-item {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 11px 16px;
+    min-height: var(--mmpt-tap);
+    padding: 10px 14px;
     border: 0;
-    border-radius: 8px;
+    border-radius: 7px;
     background: transparent;
-    color: #64748B;
-    font: inherit;
-    font-size: 15px;
-    font-weight: 600;
+    color: var(--mmpt-ink-3);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    transition: background 0.15s, color 0.15s;
 }
-.mmpt-main-nav-item:hover {
-    color: #2563EB;
-}
+.mmpt-main-nav-item:hover { color: var(--mmpt-ink); }
 .mmpt-main-nav-item-active {
-    background: #FFFFFF;
-    color: #0F172A;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+    background: var(--mmpt-surface);
+    color: var(--mmpt-ink);
+    box-shadow: 0 1px 2px rgba(20, 22, 26, 0.08);
 }
 
-/* Header */
+/* ─────────────────────────────────────────────
+   3. Header
+   ───────────────────────────────────────────── */
 .mmpt-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    margin-bottom: 24px;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
 }
-.mmpt-header-left {
-    flex: 1;
-}
+.mmpt-header-left { flex: 1; min-width: 0; }
 .mmpt-title {
-    font-size: 28px;
-    font-weight: 700;
-    margin: 0 0 4px;
-    color: #0F172A;
+    margin: 0 0 2px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--mmpt-ink);
 }
 .mmpt-subtitle {
-    font-size: 14px;
-    color: #64748B;
     margin: 0;
-    font-style: italic;
+    font-size: 13px;
+    font-style: normal;
+    color: var(--mmpt-ink-3);
 }
 
-/* Buttons */
+/* ─────────────────────────────────────────────
+   4. Buttons
+   ───────────────────────────────────────────── */
 .mmpt-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 10px 20px;
+    min-height: var(--mmpt-tap);
+    padding: 11px 18px;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+    border-radius: var(--mmpt-radius);
     font-family: inherit;
-}
-.mmpt-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.mmpt-btn-primary {
-    background: #3B82F6;
-    color: #FFFFFF;
-}
-.mmpt-btn-primary:hover:not(:disabled) {
-    background: #2563EB;
-}
-.mmpt-btn-secondary {
-    background: #F1F5F9;
-    color: #475569;
-}
-.mmpt-btn-secondary:hover {
-    background: #E2E8F0;
-}
-.mmpt-btn-danger {
-    background: #EF4444;
-    color: #FFFFFF;
-}
-.mmpt-btn-danger:hover {
-    background: #DC2626;
-}
-.mmpt-btn-sm {
-    padding: 6px 12px;
-    font-size: 13px;
-}
-.mmpt-btn-ghost {
-    background: transparent;
-    color: #64748B;
-    padding: 6px 10px;
-}
-.mmpt-btn-ghost:hover {
-    background: #F1F5F9;
-    color: #1E293B;
-}
-
-/* Filters */
-.mmpt-filters {
-    margin-bottom: 20px;
-}
-.mmpt-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 12px;
-    border-bottom: 2px solid #E2E8F0;
-    padding-bottom: 0;
-}
-.mmpt-tab {
-    padding: 8px 16px;
-    border: none;
-    background: transparent;
     font-size: 14px;
     font-weight: 500;
-    color: #64748B;
+    line-height: 1.2;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    transition: all 0.2s;
-    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
 }
-.mmpt-tab:hover {
-    color: #3B82F6;
+.mmpt-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.mmpt-btn:active:not(:disabled) { transform: translateY(0.5px); }
+
+.mmpt-btn-primary {
+    background: var(--mmpt-silver);
+    color: #FFFFFF;
 }
-.mmpt-tab-active {
-    color: #3B82F6;
-    border-bottom-color: #3B82F6;
+.mmpt-btn-primary:hover:not(:disabled) { background: var(--mmpt-silver-hover); }
+
+.mmpt-btn-secondary {
+    background: var(--mmpt-surface);
+    border: 1px solid var(--mmpt-line-2);
+    color: var(--mmpt-ink-2);
 }
-.mmpt-badge-count {
-    display: inline-block;
-    background: #E2E8F0;
-    color: #475569;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 1px 7px;
-    border-radius: 10px;
-    margin-left: 4px;
-}
-.mmpt-tab-active .mmpt-badge-count {
-    background: #DBEAFE;
-    color: #2563EB;
-}
-.mmpt-filter-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.mmpt-select, .mmpt-search {
-    padding: 8px 12px;
-    border: 1px solid #CBD5E1;
-    border-radius: 8px;
-    font-size: 14px;
-    background: #FFFFFF;
-    color: #1E293B;
-    font-family: inherit;
-}
-.mmpt-select:focus, .mmpt-search:focus {
-    outline: none;
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-}
-.mmpt-search {
-    flex: 1;
-    min-width: 180px;
+.mmpt-btn-secondary:hover:not(:disabled) {
+    background: var(--mmpt-silver-soft);
+    color: var(--mmpt-ink);
 }
 
-/* Project Cards */
+.mmpt-btn-danger {
+    background: var(--mmpt-rail-red);
+    color: #FFFFFF;
+}
+.mmpt-btn-danger:hover:not(:disabled) { background: var(--mmpt-rail-deep); }
+
+.mmpt-btn-ghost {
+    background: transparent;
+    color: var(--mmpt-ink-3);
+}
+.mmpt-btn-ghost:hover:not(:disabled) {
+    background: rgba(20, 22, 26, 0.05);
+    color: var(--mmpt-ink);
+}
+
+/* Small buttons stay 44px tall for touch — only the padding shrinks */
+.mmpt-btn-sm {
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+/* ─────────────────────────────────────────────
+   5. Filters and tabs
+   ───────────────────────────────────────────── */
+.mmpt-filters { margin-bottom: 16px; }
+
+.mmpt-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.mmpt-tabs::-webkit-scrollbar { display: none; }
+
+.mmpt-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid var(--mmpt-line);
+    border-radius: 20px;
+    background: var(--mmpt-surface);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mmpt-ink-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.mmpt-tab:hover { border-color: var(--mmpt-line-2); }
+.mmpt-tab-active {
+    background: var(--mmpt-silver);
+    border-color: var(--mmpt-silver);
+    color: #FFFFFF;
+}
+
+.mmpt-badge-count {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 20px;
+    background: rgba(20, 22, 26, 0.08);
+    color: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+.mmpt-tab-active .mmpt-badge-count,
+.mmpt-main-nav-item-active .mmpt-badge-count {
+    background: rgba(255, 255, 255, 0.22);
+}
+.mmpt-tab-active .mmpt-badge-count { color: #FFFFFF; }
+
+.mmpt-filter-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.mmpt-select,
+.mmpt-search {
+    min-height: var(--mmpt-tap);
+    padding: 10px 12px;
+    border: 1px solid var(--mmpt-line-2);
+    border-radius: var(--mmpt-radius);
+    background: var(--mmpt-surface);
+    font-family: inherit;
+    font-size: 16px; /* 16px stops iOS Safari zooming on focus */
+    color: var(--mmpt-ink);
+}
+.mmpt-search { flex: 1; min-width: 160px; }
+.mmpt-select:focus,
+.mmpt-search:focus {
+    outline: none;
+    border-color: var(--mmpt-silver);
+    box-shadow: 0 0 0 3px rgba(84, 91, 100, 0.14);
+}
+
+/* ─────────────────────────────────────────────
+   6. Project cards
+   ───────────────────────────────────────────── */
 .mmpt-projects {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     min-height: 80px;
 }
-.mmpt-loading {
-    text-align: center;
-    color: #94A3B8;
-    padding: 40px 0;
-    font-size: 14px;
-}
+.mmpt-loading,
 .mmpt-empty {
+    padding: 48px 16px;
     text-align: center;
-    color: #94A3B8;
-    padding: 60px 0;
-    font-size: 15px;
+    color: var(--mmpt-ink-3);
+    font-size: 14px;
 }
 
 .mmpt-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
-    border-radius: 12px;
-    border-left: 4px solid #F59E0B;
+    background: var(--mmpt-surface);
+    border: 1px solid var(--mmpt-line);
+    border-left: var(--mmpt-rail) solid var(--mmpt-rail-neutral);
+    border-radius: 0; /* square: rounded corners break against a single-sided rail */
     overflow: hidden;
-    transition: box-shadow 0.2s;
+    transition: border-color 0.15s;
 }
-.mmpt-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.mmpt-card[data-priority="high"] {
-    border-left-color: #EF4444;
-}
-.mmpt-card[data-priority="medium"] {
-    border-left-color: #F59E0B;
-}
-.mmpt-card[data-priority="low"] {
-    border-left-color: #3B82F6;
+
+/* Rail colour from priority — the fallback when no cadence is set */
+.mmpt-card[data-priority="high"]   { border-left-color: var(--mmpt-rail-red); }
+.mmpt-card[data-priority="medium"] { border-left-color: var(--mmpt-rail-orange); }
+.mmpt-card[data-priority="low"]    { border-left-color: var(--mmpt-rail-neutral); }
+
+/* Tint from staleness — applies to cards with no commitment cadence */
+.mmpt-card[data-staleness="warning"] {
+    background: var(--mmpt-tint-yellow);
+    border-color: var(--mmpt-edge-yellow);
+    border-left-color: var(--mmpt-rail-yellow);
 }
 .mmpt-card[data-staleness="critical"] {
-    box-shadow: 0 0 0 2px #FECACA, 0 0 12px rgba(239,68,68,0.15);
+    background: var(--mmpt-tint-red);
+    border-color: var(--mmpt-edge-red);
+    border-left-color: var(--mmpt-rail-red);
 }
 
-/* Commitment status card backgrounds (applied when a cadence is set) */
-.mmpt-card--on-track    { background: #EAF3DE; border-color: #C0DD97; }
-.mmpt-card--due-soon    { background: #FAEEDA; border-color: #FAC775; }
-.mmpt-card--slight-over { background: #FCEBEB; border-color: #F7C1C1; }
-.mmpt-card--overdue     { background: #F09595; border-color: #E24B4A; }
-.mmpt-card--severe      { background: #791F1F; border-color: #501313; color: #FCEBEB; }
-
-/* Left accent border = status colour (overrides priority colour) */
-.mmpt-card.mmpt-card--on-track    { border-left-color: #639922; }
-.mmpt-card.mmpt-card--due-soon    { border-left-color: #BA7517; }
-.mmpt-card.mmpt-card--slight-over { border-left-color: #E24B4A; }
-.mmpt-card.mmpt-card--overdue     { border-left-color: #A32D2D; }
-.mmpt-card.mmpt-card--severe      { border-left-color: #501313; }
-
-/* Invert all text inside severely overdue cards (dark bg, light text) */
-.mmpt-card--severe .mmpt-card-name,
-.mmpt-card--severe .mmpt-detail-text,
-.mmpt-card--severe .mmpt-timeline-desc,
-.mmpt-card--severe .mmpt-timeline-date,
-.mmpt-card--severe .mmpt-card-created {
-    color: #FCEBEB;
+/* Tint from commitment status — wins over staleness when a cadence is set */
+.mmpt-card.mmpt-card--on-track {
+    background: var(--mmpt-tint-green);
+    border-color: var(--mmpt-edge-green);
+    border-left-color: var(--mmpt-rail-green);
 }
-.mmpt-card--severe .mmpt-detail-label {
-    color: #F7C1C1; /* slightly muted for labels */
+.mmpt-card.mmpt-card--due-soon {
+    background: var(--mmpt-tint-orange);
+    border-color: var(--mmpt-edge-orange);
+    border-left-color: var(--mmpt-rail-orange);
 }
-.mmpt-card--severe .mmpt-card-chevron {
-    color: #F7C1C1;
+.mmpt-card.mmpt-card--slight-over {
+    background: var(--mmpt-tint-yellow);
+    border-color: var(--mmpt-edge-yellow);
+    border-left-color: var(--mmpt-rail-yellow);
 }
-.mmpt-card--severe .mmpt-card-body,
-.mmpt-card--severe .mmpt-card-actions {
-    border-top-color: #A32D2D;
+.mmpt-card.mmpt-card--overdue {
+    background: var(--mmpt-tint-red);
+    border-color: var(--mmpt-edge-red);
+    border-left-color: var(--mmpt-rail-red);
 }
-.mmpt-card--severe .mmpt-timeline {
-    border-left-color: #A32D2D;
-}
-.mmpt-card--severe .mmpt-milestone-toggle {
-    color: #F7C1C1;
+/* Severe stays light — no text inversion needed anywhere */
+.mmpt-card.mmpt-card--severe {
+    background: var(--mmpt-tint-deep);
+    border-color: var(--mmpt-edge-deep);
+    border-left-color: var(--mmpt-rail-deep);
 }
 
 .mmpt-card-header {
-    padding: 14px 16px;
-    cursor: pointer;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
-    flex-wrap: wrap;
+    padding: 13px 14px;
+    cursor: pointer;
 }
 .mmpt-card-name {
+    flex: 1 1 100%;
+    order: -1;
+    margin-bottom: 6px;
     font-size: 15px;
-    font-weight: 600;
-    color: #0F172A;
-}
-.mmpt-chip {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-}
-.mmpt-chip-version {
-    background: #1E293B;
-    color: #E2E8F0;
-    font-family: monospace;
-}
-.mmpt-chip-category {
-    background: #F1F5F9;
-    color: #475569;
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-}
-.mmpt-chip-priority {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
-}
-.mmpt-chip-priority-high {
-    background: #FEE2E2;
-    color: #DC2626;
-}
-.mmpt-chip-priority-medium {
-    background: #FEF3C7;
-    color: #D97706;
-}
-.mmpt-chip-priority-low {
-    background: #DBEAFE;
-    color: #2563EB;
-}
-.mmpt-chip-staleness {
-    font-size: 12px;
     font-weight: 500;
+    color: var(--mmpt-ink);
+    overflow-wrap: anywhere;
 }
-.mmpt-staleness-fresh {
-    color: #16A34A;
-}
-.mmpt-staleness-notice {
-    color: #3B82F6;
-}
-.mmpt-staleness-warning {
-    color: #D97706;
-}
-.mmpt-staleness-critical {
-    color: #DC2626;
-    font-weight: 700;
-}
-.mmpt-chip-commitment {
-    font-size: 12px;
-    font-weight: 500;
-}
-.mmpt-commitment-on_track {
-    color: #16A34A;
-}
-.mmpt-commitment-due_soon {
-    color: #3B82F6;
-}
-.mmpt-commitment-late {
-    color: #D97706;
-}
-.mmpt-commitment-overdue {
-    color: #DC2626;
-    font-weight: 700;
-}
-.mmpt-card-spacer {
-    flex: 1;
-}
+.mmpt-card-spacer { flex: 1; }
 .mmpt-card-chevron {
-    color: #94A3B8;
-    font-size: 14px;
+    order: -1;
+    margin-left: auto;
+    color: var(--mmpt-ink-4);
+    font-size: 12px;
+    line-height: 1.6;
     transition: transform 0.2s;
 }
-.mmpt-card.mmpt-expanded .mmpt-card-chevron {
-    transform: rotate(180deg);
+.mmpt-card.mmpt-expanded .mmpt-card-chevron { transform: rotate(180deg); }
+
+/* Header becomes a wrapping chip row under the title */
+.mmpt-card-header {
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+}
+.mmpt-card-name { flex-basis: calc(100% - 24px); }
+
+/* ─────────────────────────────────────────────
+   7. Chips — always white on a tinted card,
+   grey on an untinted one. Semantic chips carry
+   their colour in the text, never the background.
+   ───────────────────────────────────────────── */
+.mmpt-chip,
+.mmpt-chip-staleness,
+.mmpt-chip-commitment {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: var(--mmpt-surface);
+    color: var(--mmpt-ink-2);
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+/* On an untinted (plain white) card, chips need a grey ground instead */
+.mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip,
+.mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-staleness,
+.mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-commitment {
+    background: #F3F4F6;
 }
 
-/* Card Expanded */
+.mmpt-chip-version {
+    font-family: var(--mmpt-font-mono);
+    font-size: 11px;
+    letter-spacing: -0.01em;
+}
+.mmpt-chip-category {
+    text-transform: none; /* was uppercase */
+    letter-spacing: 0;
+}
+
+/* Priority: white chip, coloured text */
+.mmpt-chip-priority-high   { color: var(--mmpt-text-red); }
+.mmpt-chip-priority-medium { color: var(--mmpt-text-orange); }
+.mmpt-chip-priority-low    { color: var(--mmpt-ink-3); }
+
+/* Staleness: white chip, coloured text */
+.mmpt-staleness-fresh    { color: var(--mmpt-text-green); }
+.mmpt-staleness-notice   { color: var(--mmpt-ink-2); }
+.mmpt-staleness-warning  { color: var(--mmpt-text-yellow); }
+.mmpt-staleness-critical { color: var(--mmpt-text-red); }
+
+/* Commitment: white chip, coloured text */
+.mmpt-commitment-on_track { color: var(--mmpt-text-green); }
+.mmpt-commitment-due_soon { color: var(--mmpt-text-orange); }
+.mmpt-commitment-late     { color: var(--mmpt-text-yellow); }
+.mmpt-commitment-overdue  { color: var(--mmpt-text-red); }
+
+/* ─────────────────────────────────────────────
+   8. Expanded card body
+   ───────────────────────────────────────────── */
 .mmpt-card-body {
     display: none;
-    padding: 0 16px 16px;
-    border-top: 1px solid #F1F5F9;
+    padding: 0 14px 14px;
+    border-top: 1px solid rgba(20, 22, 26, 0.07);
 }
-.mmpt-card.mmpt-expanded .mmpt-card-body {
-    display: block;
-}
-.mmpt-detail-section {
-    margin: 14px 0 0;
-}
+.mmpt-card.mmpt-expanded .mmpt-card-body { display: block; }
+
+.mmpt-detail-section { margin: 14px 0 0; }
 .mmpt-detail-label {
+    margin-bottom: 3px;
     font-size: 12px;
-    font-weight: 700;
-    color: #64748B;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
+    font-weight: 500;
+    text-transform: none; /* was uppercase */
+    letter-spacing: 0;
+    color: var(--mmpt-ink-3);
 }
 .mmpt-detail-text {
     font-size: 14px;
-    color: #334155;
+    color: var(--mmpt-ink-2);
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
-/* Milestone Timeline */
 .mmpt-timeline {
-    margin-top: 12px;
+    margin-top: 10px;
     padding-left: 16px;
-    border-left: 2px solid #E2E8F0;
+    border-left: 1px solid rgba(20, 22, 26, 0.14);
 }
 .mmpt-timeline-item {
     position: relative;
-    padding: 0 0 14px 16px;
+    padding: 0 0 14px 14px;
 }
-.mmpt-timeline-item:last-child {
-    padding-bottom: 0;
-}
+.mmpt-timeline-item:last-child { padding-bottom: 0; }
 .mmpt-timeline-dot {
     position: absolute;
-    left: -23px;
-    top: 4px;
-    width: 12px;
-    height: 12px;
+    left: -21px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--mmpt-silver);
     border-radius: 50%;
-    border: 2px solid #3B82F6;
-    background: #FFFFFF;
+    background: var(--mmpt-surface);
 }
 .mmpt-timeline-item[data-type="major"] .mmpt-timeline-dot {
-    background: #3B82F6;
+    background: var(--mmpt-silver);
 }
 .mmpt-timeline-meta {
     display: flex;
@@ -436,55 +500,49 @@
     gap: 8px;
     margin-bottom: 2px;
 }
-.mmpt-timeline-date {
-    font-size: 12px;
-    color: #94A3B8;
-}
-.mmpt-timeline-desc {
-    font-size: 14px;
-    color: #334155;
-}
+.mmpt-timeline-date { font-size: 12px; color: var(--mmpt-ink-3); }
+.mmpt-timeline-desc { font-size: 14px; color: var(--mmpt-ink-2); }
 
-/* Milestone "Show earlier" toggle */
 .mmpt-milestone-toggle {
-    font-size: 13px;
-    color: #3B82F6;
-    cursor: pointer;
-    padding: 8px 0;
+    min-height: var(--mmpt-tap);
+    padding: 10px 0;
     border: none;
     background: none;
-    text-align: left;
     font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mmpt-ink-2);
+    text-align: left;
+    cursor: pointer;
 }
-.mmpt-milestone-toggle:hover {
-    text-decoration: underline;
-}
+.mmpt-milestone-toggle:hover { color: var(--mmpt-ink); text-decoration: underline; }
 
-/* Card Actions */
 .mmpt-card-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid #F1F5F9;
     flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(20, 22, 26, 0.07);
 }
 .mmpt-card-created {
+    margin-top: 10px;
     font-size: 12px;
-    color: #94A3B8;
-    margin-top: 12px;
+    color: var(--mmpt-ink-3);
 }
 
-/* Task Triage */
+/* ─────────────────────────────────────────────
+   9. Task Triage — same card grammar as projects
+   ───────────────────────────────────────────── */
 .mmpt-triage-legend {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 16px;
-    margin: -4px 0 22px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: #F8FAFC;
-    color: #64748B;
+    margin: -2px 0 20px;
+    padding: 11px 13px;
+    border-radius: var(--mmpt-radius);
+    background: var(--mmpt-silver-soft);
+    color: var(--mmpt-ink-2);
     font-size: 12px;
 }
 .mmpt-triage-legend span,
@@ -493,19 +551,20 @@
     align-items: center;
     gap: 6px;
 }
+
 .mmpt-colour-dot {
     display: inline-block;
-    width: 11px;
-    height: 11px;
-    flex: 0 0 11px;
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
     border-radius: 50%;
-    background: #94A3B8;
+    background: var(--mmpt-rail-neutral);
 }
-.mmpt-colour-dot-red { background: #DC2626; }
-.mmpt-colour-dot-orange { background: #F97316; }
-.mmpt-colour-dot-yellow { background: #EAB308; }
-.mmpt-colour-dot-green { background: #16A34A; }
-.mmpt-colour-dot-black { background: #111827; }
+.mmpt-colour-dot-red    { background: var(--mmpt-rail-red); }
+.mmpt-colour-dot-orange { background: var(--mmpt-rail-orange); }
+.mmpt-colour-dot-yellow { background: var(--mmpt-rail-yellow); }
+.mmpt-colour-dot-green  { background: var(--mmpt-rail-green); }
+.mmpt-colour-dot-black  { background: var(--mmpt-rail-black); }
 
 .mmpt-task-groups {
     display: flex;
@@ -518,101 +577,115 @@
     align-items: center;
     justify-content: space-between;
     margin-bottom: 8px;
-    padding: 0 4px;
-    color: #334155;
+    padding: 0 2px;
+    color: var(--mmpt-ink-2);
     font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-weight: 500;
+    text-transform: none; /* was uppercase */
+    letter-spacing: 0;
 }
 .mmpt-task-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
+
 .mmpt-task-card {
-    padding: 14px 16px;
-    border: 1px solid #E2E8F0;
-    border-left: 5px solid #94A3B8;
-    border-radius: 10px;
-    background: #FFFFFF;
-    transition: box-shadow 0.2s;
+    padding: 13px 14px;
+    border: 1px solid var(--mmpt-line);
+    border-left: var(--mmpt-rail) solid var(--mmpt-rail-neutral);
+    border-radius: 0;
+    background: var(--mmpt-surface);
 }
-.mmpt-task-card:hover {
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.07);
+.mmpt-task-card-red {
+    background: var(--mmpt-tint-red);
+    border-color: var(--mmpt-edge-red);
+    border-left-color: var(--mmpt-rail-red);
 }
-.mmpt-task-card-red { border-left-color: #DC2626; }
-.mmpt-task-card-orange { border-left-color: #F97316; }
-.mmpt-task-card-yellow { border-left-color: #EAB308; }
-.mmpt-task-card-green { border-left-color: #16A34A; }
-.mmpt-task-card-black { border-left-color: #111827; }
-.mmpt-task-card-completed {
-    opacity: 0.68;
+.mmpt-task-card-orange {
+    background: var(--mmpt-tint-orange);
+    border-color: var(--mmpt-edge-orange);
+    border-left-color: var(--mmpt-rail-orange);
 }
-.mmpt-task-card-completed h4 {
-    text-decoration: line-through;
+.mmpt-task-card-yellow {
+    background: var(--mmpt-tint-yellow);
+    border-color: var(--mmpt-edge-yellow);
+    border-left-color: var(--mmpt-rail-yellow);
 }
+.mmpt-task-card-green {
+    background: var(--mmpt-tint-green);
+    border-color: var(--mmpt-edge-green);
+    border-left-color: var(--mmpt-rail-green);
+}
+.mmpt-task-card-black {
+    background: var(--mmpt-tint-black);
+    border-color: var(--mmpt-edge-black);
+    border-left-color: var(--mmpt-rail-black);
+}
+.mmpt-task-card-completed { opacity: 0.6; }
+.mmpt-task-card-completed h4 { text-decoration: line-through; }
+
 .mmpt-task-card-main {
     display: flex;
     align-items: flex-start;
-    gap: 11px;
+    gap: 10px;
+    flex-wrap: wrap;
 }
-.mmpt-task-card-main > .mmpt-colour-dot {
-    margin-top: 5px;
-}
-.mmpt-task-content {
-    flex: 1;
-    min-width: 0;
-}
+.mmpt-task-card-main > .mmpt-colour-dot { margin-top: 6px; }
+.mmpt-task-content { flex: 1; min-width: 0; }
 .mmpt-task-content h4 {
     margin: 0;
-    color: #0F172A;
     font-size: 15px;
-    font-weight: 650;
+    font-weight: 500;
+    color: var(--mmpt-ink);
     overflow-wrap: anywhere;
 }
 .mmpt-task-description {
     margin: 5px 0 0;
-    color: #64748B;
     font-size: 13px;
+    color: var(--mmpt-ink-2);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
 .mmpt-task-due {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     flex: 0 0 auto;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 1px;
-    padding-left: 12px;
-    color: #64748B;
-    font-size: 11px;
+    margin-top: 8px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: var(--mmpt-surface);
+    font-size: 11.5px;
+    color: var(--mmpt-ink-3);
     white-space: nowrap;
 }
+.mmpt-task-card:not([class*="mmpt-task-card-red"]):not([class*="mmpt-task-card-orange"]):not([class*="mmpt-task-card-yellow"]):not([class*="mmpt-task-card-green"]):not([class*="mmpt-task-card-black"]) .mmpt-task-due {
+    background: #F3F4F6;
+}
 .mmpt-task-due strong {
-    color: #334155;
-    font-size: 12px;
+    font-weight: 500;
+    color: var(--mmpt-ink-2);
 }
 .mmpt-task-due-today strong,
-.mmpt-task-due-overdue strong {
-    color: #DC2626;
-}
+.mmpt-task-due-overdue strong { color: var(--mmpt-text-red); }
+
 .mmpt-task-actions {
     display: flex;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 6px;
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid #F1F5F9;
+    border-top: 1px solid rgba(20, 22, 26, 0.07);
 }
 
-/* Modal */
+/* ─────────────────────────────────────────────
+   10. Modals
+   ───────────────────────────────────────────── */
 .mmpt-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     z-index: 999999;
     display: flex;
     align-items: center;
@@ -620,60 +693,64 @@
 }
 .mmpt-modal-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(15, 23, 42, 0.5);
+    inset: 0;
+    background: rgba(20, 22, 26, 0.45);
 }
 .mmpt-modal-content {
     position: relative;
-    background: #FFFFFF;
-    border-radius: 16px;
-    padding: 28px;
-    width: 90%;
+    display: flex;
+    flex-direction: column;
+    width: 92%;
     max-width: 560px;
-    max-height: 90vh;
+    max-height: 88vh;
+    padding: 24px;
+    border-radius: var(--mmpt-radius-lg);
+    background: var(--mmpt-surface);
+    box-shadow: 0 18px 48px rgba(20, 22, 26, 0.22);
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    overscroll-behavior: contain;
 }
-.mmpt-modal-wide .mmpt-modal-content {
-    max-width: 820px;
-}
-.mmpt-modal-small {
-    max-width: 400px;
-}
+.mmpt-modal-wide .mmpt-modal-content { max-width: 820px; }
+.mmpt-modal-small { max-width: 420px; }
+
 .mmpt-modal-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 12px;
     margin-bottom: 4px;
 }
 .mmpt-modal-header h3 {
-    font-size: 20px;
-    font-weight: 700;
-    color: #0F172A;
     margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--mmpt-ink);
 }
 .mmpt-modal-close {
-    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--mmpt-tap);
+    height: var(--mmpt-tap);
+    margin: -10px -10px 0 0;
     border: none;
-    font-size: 24px;
-    color: #94A3B8;
-    cursor: pointer;
-    padding: 0 4px;
+    background: none;
+    font-size: 26px;
     line-height: 1;
+    color: var(--mmpt-ink-3);
+    cursor: pointer;
+    flex: 0 0 auto;
 }
-.mmpt-modal-close:hover {
-    color: #475569;
-}
+.mmpt-modal-close:hover { color: var(--mmpt-ink); }
 .mmpt-modal-subtitle {
+    margin: 0 0 18px;
     font-size: 14px;
-    color: #64748B;
-    margin: 0 0 20px;
+    color: var(--mmpt-ink-3);
 }
 
-/* Form */
+/* ─────────────────────────────────────────────
+   11. Forms
+   ───────────────────────────────────────────── */
 .mmpt-form {
     display: flex;
     flex-direction: column;
@@ -682,186 +759,255 @@
 .mmpt-field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     flex: 1;
+    min-width: 0;
 }
 .mmpt-field label {
     font-size: 13px;
-    font-weight: 600;
-    color: #475569;
+    font-weight: 500;
+    color: var(--mmpt-ink-2);
 }
 .mmpt-field input,
 .mmpt-field textarea,
 .mmpt-field select {
-    padding: 10px 12px;
-    border: 1px solid #CBD5E1;
-    border-radius: 8px;
-    font-size: 14px;
+    min-height: var(--mmpt-tap);
+    padding: 11px 12px;
+    border: 1px solid var(--mmpt-line-2);
+    border-radius: var(--mmpt-radius);
+    background: var(--mmpt-surface);
     font-family: inherit;
-    color: #1E293B;
-    background: #FFFFFF;
-    transition: border-color 0.2s;
+    font-size: 16px; /* keeps iOS from zooming */
+    color: var(--mmpt-ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
+.mmpt-field input::placeholder,
+.mmpt-field textarea::placeholder { color: var(--mmpt-ink-4); }
 .mmpt-field input:focus,
 .mmpt-field textarea:focus,
 .mmpt-field select:focus {
     outline: none;
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    border-color: var(--mmpt-silver);
+    box-shadow: 0 0 0 3px rgba(84, 91, 100, 0.14);
 }
-.mmpt-field textarea {
-    resize: vertical;
-}
-.mmpt-field-row {
-    display: flex;
-    gap: 12px;
-}
+.mmpt-field textarea { resize: vertical; line-height: 1.5; }
+.mmpt-field-row { display: flex; gap: 12px; }
 
-/* Two-column form grid */
 .mmpt-form-grid {
     display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 0;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
 }
-.mmpt-form-col-left {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding-right: 24px;
-}
+.mmpt-form-col-left,
 .mmpt-form-col-right {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    padding-left: 24px;
-    border-left: 1px solid #E2E8F0;
-    background: #F8FAFC;
-    border-radius: 0 0 12px 0;
-    margin: -4px -28px -4px 0;
-    padding: 16px 24px;
+    min-width: 0;
+}
+.mmpt-form-col-right {
+    padding: 16px;
+    border-radius: var(--mmpt-radius);
+    background: var(--mmpt-canvas);
 }
 .mmpt-form-grid .mmpt-field label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: #475569;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none; /* was uppercase */
+    letter-spacing: 0;
+    color: var(--mmpt-ink-2);
 }
 
 .mmpt-form-actions {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     justify-content: flex-end;
     margin-top: 6px;
 }
 
-/* Toggle Group */
-.mmpt-toggle-group {
-    display: flex;
-    gap: 8px;
-}
+.mmpt-toggle-group { display: flex; gap: 8px; }
 .mmpt-toggle {
     flex: 1;
-    padding: 10px 14px;
-    border: 2px solid #E2E8F0;
-    border-radius: 8px;
-    background: #FFFFFF;
+    min-height: var(--mmpt-tap);
+    padding: 11px 14px;
+    border: 1px solid var(--mmpt-line-2);
+    border-radius: var(--mmpt-radius);
+    background: var(--mmpt-surface);
+    font-family: inherit;
     font-size: 14px;
     font-weight: 500;
-    color: #64748B;
-    cursor: pointer;
+    color: var(--mmpt-ink-2);
     text-align: center;
-    transition: all 0.2s;
-    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
 }
-.mmpt-toggle:hover {
-    border-color: #CBD5E1;
-}
+.mmpt-toggle:hover { border-color: var(--mmpt-ink-4); }
 .mmpt-toggle-active {
-    border-color: #3B82F6;
-    background: #EFF6FF;
-    color: #2563EB;
+    border-color: var(--mmpt-silver);
+    background: var(--mmpt-silver);
+    color: #FFFFFF;
 }
 
-/* Footer */
+/* ─────────────────────────────────────────────
+   12. Footer
+   ───────────────────────────────────────────── */
 .mmpt-footer {
     display: flex;
     justify-content: center;
-    gap: 32px;
+    gap: 28px;
     padding: 16px 0;
     margin-top: 20px;
-    border-top: 1px solid #E2E8F0;
-    font-size: 14px;
-    color: #64748B;
+    border-top: 1px solid var(--mmpt-line);
+    font-size: 13px;
+    color: var(--mmpt-ink-3);
 }
 .mmpt-footer strong {
-    color: #1E293B;
+    font-weight: 500;
+    color: var(--mmpt-ink);
+    font-variant-numeric: tabular-nums;
 }
 
-/* Responsive */
-@media (max-width: 640px) {
+/* ─────────────────────────────────────────────
+   13. Tablet — 768px and up
+   ───────────────────────────────────────────── */
+@media (min-width: 768px) {
     .mmpt-app {
-        padding: 16px 12px;
-    }
-    .mmpt-header {
-        flex-direction: column;
+        max-width: 1120px;
+        padding: 28px 24px;
     }
     .mmpt-main-nav {
-        grid-template-columns: 1fr;
+        max-width: 420px;
+        margin-bottom: 28px;
     }
-    .mmpt-title {
-        font-size: 22px;
+    .mmpt-title { font-size: 26px; }
+
+    /* Two-column card grids — the whole reason for the wider canvas */
+    .mmpt-projects,
+    .mmpt-task-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 10px;
+        align-items: start;
     }
-    .mmpt-filter-row {
-        flex-direction: column;
+    /* An expanded project card takes the full width */
+    .mmpt-card.mmpt-expanded { grid-column: 1 / -1; }
+
+    .mmpt-card-name { flex-basis: auto; margin-bottom: 0; }
+    .mmpt-card-header { flex-wrap: wrap; }
+    .mmpt-card-chevron { order: 0; }
+
+    .mmpt-task-card-main { flex-wrap: nowrap; }
+    .mmpt-task-due { margin-top: 0; }
+}
+
+@media (min-width: 1024px) {
+    .mmpt-projects,
+    .mmpt-task-list {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     }
-    .mmpt-field-row {
-        flex-direction: column;
-    }
-    .mmpt-modal-content {
-        width: 95%;
-        padding: 20px;
-        border-radius: 12px;
-    }
-    .mmpt-form-grid {
-        grid-template-columns: 1fr;
-    }
-    .mmpt-form-col-left {
-        padding-right: 0;
-    }
-    .mmpt-form-col-right {
-        border-left: none;
-        border-top: 1px solid #E2E8F0;
-        margin: 0;
-        padding: 16px 0 0;
-        border-radius: 0;
-    }
+}
+
+/* ─────────────────────────────────────────────
+   14. Phone — under 640px
+   ───────────────────────────────────────────── */
+@media (max-width: 639px) {
+    .mmpt-app { padding: 16px 12px calc(24px + env(safe-area-inset-bottom)); }
+    .mmpt-main-nav { grid-template-columns: 1fr 1fr; }
+    .mmpt-header { align-items: flex-start; }
+    .mmpt-btn { padding: 11px 14px; }
+    .mmpt-filter-row > * { flex: 1 1 100%; }
+    .mmpt-field-row { flex-direction: column; }
+    .mmpt-form-grid { grid-template-columns: 1fr; gap: 14px; }
     .mmpt-footer {
         flex-direction: column;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
-    .mmpt-card-actions {
-        flex-direction: column;
+
+    /* Modals become bottom sheets with a sticky action bar */
+    .mmpt-modal { align-items: flex-end; }
+    .mmpt-modal-content {
+        width: 100%;
+        max-width: none;
+        max-height: 92vh;
+        padding: 20px 16px 0;
+        border-radius: var(--mmpt-radius-lg) var(--mmpt-radius-lg) 0 0;
     }
-    .mmpt-task-card-main {
-        flex-wrap: wrap;
+    .mmpt-modal-small { max-width: none; }
+    .mmpt-form-actions {
+        position: sticky;
+        bottom: 0;
+        margin: 6px -16px 0;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--mmpt-line);
+        background: var(--mmpt-surface);
     }
-    .mmpt-task-content {
-        flex-basis: calc(100% - 24px);
+    .mmpt-form-actions .mmpt-btn { flex: 1; }
+    .mmpt-toggle-group { flex-direction: column; }
+    .mmpt-card-actions .mmpt-btn,
+    .mmpt-task-actions .mmpt-btn { flex: 1 1 calc(50% - 3px); }
+}
+
+/* ─────────────────────────────────────────────
+   15. Dark mode
+   ───────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+    .mmpt-app {
+        --mmpt-ink:        #F0F2F5;
+        --mmpt-ink-2:      #C2C8D0;
+        --mmpt-ink-3:      #8C94A0;
+        --mmpt-ink-4:      #6C7480;
+
+        --mmpt-silver:       #767E8A;
+        --mmpt-silver-hover: #878F9B;
+        --mmpt-silver-soft:  #24272C;
+
+        --mmpt-canvas:  #16181C;
+        --mmpt-surface: #1D2024;
+        --mmpt-line:    #2E3238;
+        --mmpt-line-2:  #3B4047;
+
+        --mmpt-tint-green:   #16281E;
+        --mmpt-tint-orange:  #2C2113;
+        --mmpt-tint-yellow:  #2A2513;
+        --mmpt-tint-red:     #2C1817;
+        --mmpt-tint-deep:    #3A1918;
+        --mmpt-tint-black:   #202226;
+
+        --mmpt-edge-green:   #2C4A38;
+        --mmpt-edge-orange:  #4A3820;
+        --mmpt-edge-yellow:  #473F20;
+        --mmpt-edge-red:     #4A2926;
+        --mmpt-edge-deep:    #5C2A27;
+        --mmpt-edge-black:   #33363C;
+
+        --mmpt-text-green:   #7FCB9F;
+        --mmpt-text-orange:  #E5A85E;
+        --mmpt-text-yellow:  #D8BC5A;
+        --mmpt-text-red:     #EC8A85;
     }
-    .mmpt-task-due {
-        flex-basis: 100%;
-        align-items: flex-start;
-        padding: 8px 0 0 22px;
+    .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip,
+    .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-staleness,
+    .mmpt-card:not([class*="mmpt-card--"]):not([data-staleness="warning"]):not([data-staleness="critical"]) .mmpt-chip-commitment {
+        background: #2A2E34;
     }
-    .mmpt-task-actions {
-        flex-direction: column;
-    }
-    .mmpt-toggle-group {
-        flex-direction: column;
-    }
-    .mmpt-tabs {
-        overflow-x: auto;
+    .mmpt-btn-primary { color: #14161A; }
+    .mmpt-toggle-active { color: #14161A; }
+    .mmpt-tab-active { color: #14161A; }
+    .mmpt-card-body,
+    .mmpt-card-actions,
+    .mmpt-task-actions { border-top-color: rgba(255, 255, 255, 0.09); }
+    .mmpt-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.07); }
+}
+
+/* ─────────────────────────────────────────────
+   16. Reduced motion
+   ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .mmpt-app *,
+    .mmpt-app *::before,
+    .mmpt-app *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
     }
 }
