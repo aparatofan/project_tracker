@@ -58,7 +58,7 @@
     function stalenessHtml(level, days) {
         var cls = 'mmpt-staleness-' + level;
         var text;
-        if (level === 'critical') text = '\u26A0 ' + days + 'd silent';
+        if (level === 'critical') text = days + 'd silent';
         else if (level === 'warning') text = days + 'd silent';
         else text = daysLabel(days);
         return '<span class="mmpt-chip-staleness ' + cls + '">' + text + '</span>';
@@ -68,10 +68,10 @@
         if (status === 'none') return '';
         var cls = 'mmpt-commitment-' + status;
         var text;
-        if (status === 'on_track') text = '\u2705 ' + Math.max(0, daysRemaining) + 'd left';
-        else if (status === 'due_soon') text = '\uD83D\uDD35 Due in ' + Math.max(0, daysRemaining) + 'd';
-        else if (status === 'late') text = '\uD83D\uDFE1 Due ' + Math.abs(daysRemaining) + 'd ago';
-        else text = '\uD83D\uDD34 Overdue by ' + Math.abs(daysRemaining) + 'd';
+        if (status === 'on_track') text = Math.max(0, daysRemaining) + 'd left';
+        else if (status === 'due_soon') text = 'Due in ' + Math.max(0, daysRemaining) + 'd';
+        else if (status === 'late') text = 'Due ' + Math.abs(daysRemaining) + 'd ago';
+        else text = 'Overdue by ' + Math.abs(daysRemaining) + 'd';
         return '<span class="mmpt-chip-commitment ' + cls + '">' + text + '</span>';
     }
 
@@ -165,7 +165,7 @@
     var MILESTONE_VISIBLE = 7;
 
     function renderMilestones(milestones) {
-        if (!milestones || !milestones.length) return '<p class="mmpt-detail-text" style="color:#94A3B8;">No milestones yet.</p>';
+        if (!milestones || !milestones.length) return '<p class="mmpt-detail-text">No milestones yet.</p>';
         var sorted = milestones.slice().reverse(); // newest first
         var visible = sorted.slice(0, MILESTONE_VISIBLE);
         var hidden = sorted.slice(MILESTONE_VISIBLE);
@@ -191,7 +191,7 @@
         var cadenceSection = '';
         if (p.cadence !== 'none') {
             cadenceSection = '<div class="mmpt-detail-section">' +
-                '<div class="mmpt-detail-label">\uD83D\uDCC5 Commitment</div>' +
+                '<div class="mmpt-detail-label">Commitment</div>' +
                 '<div class="mmpt-detail-text">' + esc(p.cadence_label || p.cadence) + ' (' + esc(p.cadence) + ')</div>' +
                 '</div>';
         }
@@ -208,20 +208,20 @@
                 stalenessHtml(p.staleness_level, p.days_since_activity) +
                 commitment +
                 '<span class="mmpt-card-spacer"></span>' +
-                '<span class="mmpt-card-chevron">\u25BC</span>' +
+                '<span class="mmpt-card-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
             '</div>' +
             '<div class="mmpt-card-body">' +
                 '<div class="mmpt-detail-section">' +
-                    '<div class="mmpt-detail-label">\uD83C\uDFC1 The End In Mind</div>' +
+                    '<div class="mmpt-detail-label">The end in mind</div>' +
                     '<div class="mmpt-detail-text">' + esc(p.end_in_mind) + '</div>' +
                 '</div>' +
                 '<div class="mmpt-detail-section">' +
-                    '<div class="mmpt-detail-label">\uD83D\uDCA1 Why I Started This</div>' +
+                    '<div class="mmpt-detail-label">Why I started this</div>' +
                     '<div class="mmpt-detail-text">' + esc(p.rationale) + '</div>' +
                 '</div>' +
                 cadenceSection +
                 '<div class="mmpt-detail-section">' +
-                    '<div class="mmpt-detail-label">Milestone Log</div>' +
+                    '<div class="mmpt-detail-label">Milestone log</div>' +
                     renderMilestones(p.milestones) +
                 '</div>' +
                 '<div class="mmpt-card-actions">' +
@@ -520,7 +520,7 @@
             $('#mmpt-form-project').reset();
             $('#mmpt-submit-project').disabled = true;
             $('#mmpt-submit-project').textContent = 'Create Project';
-            $('#mmpt-modal-project-title').innerHTML = '\uD83C\uDFAF Begin With The End In Mind';
+            $('#mmpt-modal-project-title').innerHTML = 'Begin With The End In Mind';
             $('#mmpt-modal-project-subtitle').textContent = 'Before you start, define where you want to end up and why this matters.';
             openModal('mmpt-modal-project');
         });
