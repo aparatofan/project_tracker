@@ -4,7 +4,7 @@ Tags: project management, tracker, personal
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 
 A personal project management tool — "Begin with the end in mind." (Covey Habit 2)
@@ -21,8 +21,9 @@ Features:
 * Archive/restore workflow
 * REST API for future integrations
 * Task Triage with five colour-coded urgency levels
-* Combined status and priority filtering, with live counts
+* Combined status and colour filtering, with live counts
 * Collapsible task cards with icon actions
+* Swipe a task card left to complete it, right to edit it
 * Due-date countdowns and priority/date ordering
 * Task editing, completion, reopening, and deletion
 
@@ -42,6 +43,25 @@ also releases `.et_pb_row` / `.et_pb_row_inner` containing the app in CSS,
 which covers most layouts on its own.
 
 == Changelog ==
+
+= 1.5.0 =
+* Task Triage: the priority pills became a row of six colour swatches —
+  All plus the five triage colours, solid fills carrying only a count.
+  Each is named by a tooltip, an aria-label and a live caption below the
+  row, so the colours never stand unlabelled
+* Task Triage: colour counts are scoped to the active Open / Completed /
+  All tab; a colour with nothing to show is disabled and skipped by Tab,
+  and switching tabs resets the colour filter
+* Task Triage: swipe a task card left to complete it (or reopen a
+  completed one) and right to open its editor — mouse, touch and pen, at
+  every width. Vertical scrolling is untouched, and a tap still expands
+* Task Triage: completing or reopening a task raises a toast with a 3
+  second Undo, whether it came from the swipe or the tick icon
+* Task Triage: the triage colour dropdown in the task form became five
+  colour buttons — arrow-key navigable, captioned, defaulting to Vital
+* Task Triage: its own five-colour palette, no longer borrowed from the
+  project status colours
+* Project Tracker is unchanged by all of the above
 
 = 1.4.0 =
 * Both views: the card grid is one column below 1024px, so a tablet in

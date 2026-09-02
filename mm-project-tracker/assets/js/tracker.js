@@ -276,8 +276,10 @@
     }
 
     /* The stored value is the colour; the slug is what the markup, the CSS
-       tokens and the priority filter speak. Severity order is the array
-       order — Critical first, No chance last. */
+       tone tokens and the colour filter speak. Severity order is the array
+       order — Critical first, No chance last — and it is fixed everywhere
+       it appears: filter row, card sort, form buttons. Never re-sorted by
+       count or alphabetically. */
     var TASK_PRIORITIES = [
         { colour: 'red',    slug: 'critical',  label: 'Critical' },
         { colour: 'orange', slug: 'vital',     label: 'Vital' },
@@ -286,16 +288,24 @@
         { colour: 'black',  slug: 'no-chance', label: 'No chance' },
     ];
 
-    /* label is the human name the filter pills carry in the template; only
-       the slug and the order are needed at render time. */
+    /* A new task is Vital — pre-selected, and there is no unset state. */
+    var DEFAULT_TASK_COLOUR = 'orange';
+
     var PRIORITY_BY_COLOUR = {};
+    var PRIORITY_BY_SLUG = {};
     TASK_PRIORITIES.forEach(function (p, i) {
-        PRIORITY_BY_COLOUR[p.colour] = { slug: p.slug, order: i };
+        var entry = { colour: p.colour, slug: p.slug, label: p.label, order: i };
+        PRIORITY_BY_COLOUR[p.colour] = entry;
+        PRIORITY_BY_SLUG[p.slug] = entry;
     });
 
     /* The REST layer falls back to yellow for an unknown colour; match it. */
     function priorityFor(colour) {
         return PRIORITY_BY_COLOUR[colour] || PRIORITY_BY_COLOUR.yellow;
+    }
+
+    function taskCountLabel(n) {
+        return n + (n === 1 ? ' task' : ' tasks');
     }
 
     /* ───── Icons — inline SVG. Divi does not enqueue Dashicons on the
@@ -337,7 +347,12 @@
 
     /* A collapsed card is the dot and the title, nothing else. Everything
        else sits in the panel, which is inert while closed so Tab never
-       lands inside it. */
+       lands inside it.
+
+       The card is wrapped in a .mmpt-swipe, which clips it and carries the
+       action rail behind it: dragging left reveals Complete on the right
+       edge, dragging right reveals Edit on the left. The rail is decorative
+       — every action on it is a button inside the panel too. */
     function renderTask(task) {
         var prio = priorityFor(task.colour);
         var isOpen = !!state.openTasks[task.id];
@@ -347,8 +362,14 @@
             : '';
         var completeLabel = task.completed ? 'Reopen task' : 'Complete task';
         var completedClass = task.completed ? ' mmpt-task-card--completed' : '';
+        var railDone = task.completed ? 'Reopen \u21BA' : 'Complete \u2713';
 
-        return '<article class="mmpt-card mmpt-task-card' + completedClass + '" data-priority="' + prio.slug +
+        return '<div class="mmpt-swipe" data-id="' + task.id + '">' +
+            '<div class="mmpt-swipe__rail" aria-hidden="true">' +
+                '<span class="mmpt-act mmpt-act--edit">\u270E Edit</span>' +
+                '<span class="mmpt-act mmpt-act--done">' + railDone + '</span>' +
+            '</div>' +
+            '<article class="mmpt-card mmpt-task-card' + completedClass + '" data-tone="' + prio.slug +
                 '" data-id="' + task.id + '" data-open="' + (isOpen ? 'true' : 'false') + '">' +
             '<button type="button" class="mmpt-card__toggle" aria-expanded="' + (isOpen ? 'true' : 'false') +
                     '" aria-controls="' + panelId + '">' +
@@ -368,7 +389,8 @@
                     '</div>' +
                 '</div>' +
             '</div>' +
-        '</article>';
+            '</article>' +
+        '</div>';
     }
 
     /* Critical → No chance, then by due date within a priority, undated
@@ -406,29 +428,43 @@
         });
     }
 
-    /* Counts are per priority within the current status filter, so they
-       recalculate whenever either filter moves. */
-    function renderPriorityFilter(inStatus) {
+    /* Counts are per colour within the current Open / Completed / All tab,
+       so the numbers always agree with the list below and recalculate
+       whenever either filter moves.
+
+       The swatches carry no text, so three channels name them: the CSS
+       tooltip from data-tip, the aria-label here, and the caption. */
+    function renderColourFilter(inStatus) {
         var counts = { all: inStatus.length };
         TASK_PRIORITIES.forEach(function (p) { counts[p.slug] = 0; });
         inStatus.forEach(function (task) { counts[priorityFor(task.colour).slug]++; });
 
-        /* A selection with nothing left to show falls back to All. */
+        /* A selection with nothing left to show falls back to All, rather
+           than leaving an empty list under a dead filter. */
         if (state.taskPriority !== 'all' && !counts[state.taskPriority]) {
             state.taskPriority = 'all';
             persistTriageFilters();
         }
 
-        $$('.mmpt-prio__btn').forEach(function (btn) {
-            var slug = btn.dataset.priority;
+        $$('.mmpt-sw').forEach(function (btn) {
+            var slug = btn.dataset.filter;
             var count = counts[slug] || 0;
-            var countEl = btn.querySelector('.mmpt-prio__count');
-            if (countEl) countEl.textContent = count;
+            var name = slug === 'all' ? 'All colours' : PRIORITY_BY_SLUG[slug].label;
+            var countEl = btn.querySelector('.mmpt-sw__count');
+
+            /* Two digits is all the row has room for at 390px. */
+            if (countEl) countEl.textContent = count > 99 ? '99+' : count;
+            btn.setAttribute('aria-label', name + ', ' + taskCountLabel(count));
             btn.setAttribute('aria-pressed', slug === state.taskPriority ? 'true' : 'false');
-            /* Dimmed, not hidden — the row must not reflow as tasks move.
-               All stays live so there is always a way back. */
+            /* Greyed rather than hidden — the row must not reflow as tasks
+               move — and skipped by Tab. All is never disabled. */
             btn.disabled = slug !== 'all' && count === 0;
         });
+
+        var active = state.taskPriority;
+        $('#mmpt-filter-caption').innerHTML = 'Showing <b>' +
+            (active === 'all' ? 'every colour' : esc(PRIORITY_BY_SLUG[active].label)) +
+            '</b> \u2014 ' + taskCountLabel(active === 'all' ? counts.all : counts[active]);
     }
 
     /* inert is what keeps collapsed controls out of the tab order. Older
@@ -459,7 +495,7 @@
 
         renderTaskCounts();
         var inStatus = tasksInStatus();
-        renderPriorityFilter(inStatus);
+        renderColourFilter(inStatus);
 
         var visible = state.taskPriority === 'all'
             ? inStatus
@@ -490,6 +526,186 @@
            every open card shut. */
         if (isOpen) state.openTasks[id] = true;
         else delete state.openTasks[id];
+    }
+
+    /* ───── Task actions — one route per action, whether it was reached
+       by an icon or by a swipe, so the feedback is identical ───── */
+
+    /* /complete toggles, so undo is the same call again. */
+    function toggleTaskDone(id, opts) {
+        var task = state.tasks.find(function (item) { return item.id === id; });
+        if (!task) return;
+        var wasCompleted = !!task.completed;
+
+        req('PUT', 'tasks/' + id + '/complete').then(function (updated) {
+            var idx = state.tasks.findIndex(function (item) { return item.id === updated.id; });
+            if (idx !== -1) state.tasks[idx] = updated;
+            renderTasks();
+            if (opts && opts.silent) return;
+            showUndoToast(wasCompleted ? 'Reopened' : 'Completed \u2014 moved to Completed', id);
+        }).catch(function (err) {
+            renderTasks();   /* puts a swiped card back where it was */
+            alert(err.message || 'Error updating task.');
+        });
+    }
+
+    function openTaskEditor(id) {
+        var task = state.tasks.find(function (item) { return item.id === id; });
+        if (!task) return;
+        $('#mmpt-task-edit-id').value = task.id;
+        $('#mmpt-task-title').value = task.title;
+        $('#mmpt-task-description').value = task.description || '';
+        $('#mmpt-task-due-date').value = task.due_date || '';
+        setTaskColour(task.colour);
+        $('#mmpt-modal-task-title').textContent = 'Edit Task';
+        $('#mmpt-submit-task').textContent = 'Save Changes';
+        validateTaskForm();
+        openModal('mmpt-modal-task');
+    }
+
+    /* ───── Undo toast ─────
+       Nothing is destroyed on completion, so this window is a convenience,
+       not the only route back: the task sits in the Completed tab and a
+       left swipe there reopens it. Only the most recent action is
+       undoable, and the next toast replaces this one. */
+    var TOAST_MS = 3000;
+    var toastTimer = null;
+
+    function hideToast() {
+        if (toastTimer) {
+            window.clearTimeout(toastTimer);
+            toastTimer = null;
+        }
+        var host = $('#mmpt-toast');
+        host.innerHTML = '';
+        host.hidden = true;
+    }
+
+    function showUndoToast(text, id) {
+        hideToast();
+        var host = $('#mmpt-toast');
+        host.innerHTML = '<span>' + esc(text) + '</span>' +
+            '<button type="button" class="mmpt-toast__undo">Undo</button>';
+        host.hidden = false;
+        $('.mmpt-toast__undo', host).addEventListener('click', function () {
+            hideToast();
+            toggleTaskDone(id, { silent: true });
+        });
+        toastTimer = window.setTimeout(hideToast, TOAST_MS);
+    }
+
+    /* ───── Swipe — Task Triage cards only ─────
+       Pointer Events throughout: one code path for mouse, touch and pen, at
+       every viewport width. The wrapper's touch-action:pan-y hands us the
+       horizontal axis and keeps the vertical one for the page.
+
+       Left completes (or reopens a completed task); right opens the editor.
+       There is no keyboard equivalent and none is needed — the icon row in
+       the expanded card already covers complete, edit and delete. */
+    var SWIPE_LOCK_PX = 8;         /* movement before the axis is decided */
+    var SWIPE_COMMIT = 0.4;        /* fraction of card width that commits */
+    var SWIPE_EXIT_MS = 180;       /* exit animation before the card is gone */
+    var SWIPE_SNAP_MS = 240;       /* snap-back, then the rail can go dark */
+
+    var drag = null;
+    /* A drag must never fall through to the tap-to-expand click. The click
+       that follows a gesture is the only one to swallow, so this records
+       when the drag ended rather than a bare flag: a right swipe opens the
+       modal, and whatever the user clicks after that is their own. */
+    var CLICK_SUPPRESS_MS = 700;
+    var swipedAt = 0;
+
+    function blockSelection(e) { e.preventDefault(); }
+
+    function releaseDrag() {
+        window.removeEventListener('pointermove', onDragMove);
+        window.removeEventListener('pointerup', onDragEnd);
+        window.removeEventListener('pointercancel', onDragEnd);
+        window.removeEventListener('selectstart', blockSelection);
+        drag = null;
+    }
+
+    function onDragStart(e) {
+        if (drag) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+        var card = e.target.closest('.mmpt-task-card');
+        var wrap = card && card.closest('.mmpt-swipe');
+        if (!wrap) return;
+        /* The icon row keeps working when a drag starts on top of it. */
+        if (e.target.closest('.mmpt-iconbtn')) return;
+
+        swipedAt = 0;
+        card.classList.remove('mmpt-card--animate');
+        drag = {
+            wrap: wrap,
+            card: card,
+            id: parseInt(wrap.dataset.id, 10),
+            pointerId: e.pointerId,
+            x0: e.clientX,
+            y0: e.clientY,
+            dx: 0,
+            lock: null,
+        };
+
+        window.addEventListener('pointermove', onDragMove);
+        window.addEventListener('pointerup', onDragEnd);
+        window.addEventListener('pointercancel', onDragEnd);
+    }
+
+    function onDragMove(e) {
+        if (!drag || e.pointerId !== drag.pointerId) return;
+        var dx = e.clientX - drag.x0;
+        var dy = e.clientY - drag.y0;
+
+        if (drag.lock === null) {
+            if (Math.abs(dx) < SWIPE_LOCK_PX && Math.abs(dy) < SWIPE_LOCK_PX) return;
+            /* A y lock is final for this gesture: the card never moves and
+               the page scrolls normally. */
+            drag.lock = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+            if (drag.lock === 'y') return;
+
+            try { drag.card.setPointerCapture(e.pointerId); } catch (err) { /* not fatal */ }
+            drag.wrap.classList.add('mmpt-swipe--active');
+            window.addEventListener('selectstart', blockSelection);
+        }
+        if (drag.lock !== 'x') return;
+
+        drag.dx = dx;
+        /* Set every move, so the rail tracks a direction change mid-drag */
+        drag.wrap.dataset.dir = dx < 0 ? 'left' : 'right';
+        drag.card.style.transform = 'translateX(' + dx + 'px)';   /* 1:1, no rubber band */
+    }
+
+    function onDragEnd(e) {
+        if (!drag || e.pointerId !== drag.pointerId) return;
+        var d = drag;
+        var cancelled = e.type === 'pointercancel';
+        releaseDrag();
+
+        d.wrap.classList.remove('mmpt-swipe--active');
+        /* No x lock: a tap, or a vertical scroll. The click handler owns
+           tap-to-expand from here. */
+        if (d.lock !== 'x') {
+            d.wrap.removeAttribute('data-dir');
+            return;
+        }
+
+        swipedAt = Date.now();
+        d.card.classList.add('mmpt-card--animate');
+        var committed = !cancelled && Math.abs(d.dx) > d.card.offsetWidth * SWIPE_COMMIT;
+
+        if (committed && d.dx < 0) {
+            d.card.style.transform = 'translateX(-100%)';
+            window.setTimeout(function () { toggleTaskDone(d.id); }, SWIPE_EXIT_MS);
+            return;
+        }
+
+        /* Right, or short of the threshold: the card goes back where it
+           was. On a committed right swipe the modal is the feedback. */
+        d.card.style.transform = '';
+        window.setTimeout(function () { d.wrap.removeAttribute('data-dir'); }, SWIPE_SNAP_MS);
+        if (committed) openTaskEditor(d.id);
     }
 
     function refresh() {
@@ -539,10 +755,24 @@
         $('#mmpt-submit-project').disabled = !(name && end && rat);
     }
 
+    /* The colour buttons always hold a value, so the title is the only
+       thing left that can block the submit. */
     function validateTaskForm() {
-        var title = $('#mmpt-task-title').value.trim();
-        var colour = $('#mmpt-task-colour').value;
-        $('#mmpt-submit-task').disabled = !(title && colour);
+        $('#mmpt-submit-task').disabled = !$('#mmpt-task-title').value.trim();
+    }
+
+    /* The radiogroup, the hidden input the form submits, and the caption
+       that names the choice all move together. */
+    function setTaskColour(colour) {
+        var prio = priorityFor(colour);
+        $('#mmpt-task-colour').value = prio.colour;
+        $$('#mmpt-task-colour-group button[role="radio"]').forEach(function (btn) {
+            var checked = btn.dataset.colour === prio.colour;
+            btn.setAttribute('aria-checked', checked ? 'true' : 'false');
+            /* The selected button is the group's one tab stop */
+            btn.tabIndex = checked ? 0 : -1;
+        });
+        $('#mmpt-task-colour-caption').innerHTML = 'Selected: <b>' + esc(prio.label) + '</b>';
     }
 
     var TASK_STATUSES = ['open', 'completed', 'all'];
@@ -600,16 +830,42 @@
         $('#mmpt-new-task-btn').addEventListener('click', function () {
             $('#mmpt-form-task').reset();
             $('#mmpt-task-edit-id').value = '';
+            setTaskColour(DEFAULT_TASK_COLOUR);
             $('#mmpt-modal-task-title').textContent = 'Add Task';
             $('#mmpt-submit-task').textContent = 'Add Task';
             $('#mmpt-submit-task').disabled = true;
             openModal('mmpt-modal-task');
         });
 
-        ['mmpt-task-title', 'mmpt-task-colour'].forEach(function (id) {
-            $('#' + id).addEventListener('input', validateTaskForm);
-            $('#' + id).addEventListener('change', validateTaskForm);
+        $('#mmpt-task-title').addEventListener('input', validateTaskForm);
+
+        /* Triage colour — a radiogroup: one tab stop for the five, arrow
+           keys between them. Both forms use it; only the colour control
+           changed, every other field is as it was. */
+        var colourGroup = $('#mmpt-task-colour-group');
+        var colourRadios = $$('button[role="radio"]', colourGroup);
+
+        colourGroup.addEventListener('click', function (e) {
+            var btn = e.target.closest('button[role="radio"]');
+            if (btn) setTaskColour(btn.dataset.colour);
         });
+
+        colourGroup.addEventListener('keydown', function (e) {
+            var btn = e.target.closest('button[role="radio"]');
+            if (!btn) return;
+            var index = colourRadios.indexOf(btn);
+            var next;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = colourRadios[(index + 1) % colourRadios.length];
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = colourRadios[(index - 1 + colourRadios.length) % colourRadios.length];
+            else if (e.key === 'Home') next = colourRadios[0];
+            else if (e.key === 'End') next = colourRadios[colourRadios.length - 1];
+            if (!next) return;
+            e.preventDefault();
+            setTaskColour(next.dataset.colour);
+            next.focus();
+        });
+
+        setTaskColour(DEFAULT_TASK_COLOUR);
 
         /* Task Form Submit */
         $('#mmpt-form-task').addEventListener('submit', function (e) {
@@ -647,6 +903,9 @@
         function selectTaskStatus(status) {
             syncStatusTabs(status);
             state.taskFilter = status;
+            /* The counts are scoped to the tab, so a colour carried across
+               would be filtering against numbers the user never saw. */
+            state.taskPriority = 'all';
             persistTriageFilters();
             renderTasks();
         }
@@ -673,16 +932,30 @@
            would replace the loading line with "No tasks found". */
         syncStatusTabs(state.taskFilter);
 
-        /* Task priority — single-select toggles. Clicking the active pill
-           returns to All; there is never more than one colour selected. */
-        $$('.mmpt-prio__btn').forEach(function (btn) {
+        /* Triage colour filter — single-select. Choosing one clears the
+           previous; choosing the active one, or All, resets to All. */
+        $$('.mmpt-sw').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                var slug = btn.dataset.priority;
+                var slug = btn.dataset.filter;
                 state.taskPriority = slug === state.taskPriority ? 'all' : slug;
                 persistTriageFilters();
                 renderTasks();
             });
         });
+
+        /* Swipe. Delegated, so it survives every re-render of the list. */
+        $('#mmpt-tasks').addEventListener('pointerdown', onDragStart);
+
+        /* A swipe ends in a click on the card it started on; swallow that
+           one before it reaches the handler below and expands the card. */
+        $('#mmpt-tasks').addEventListener('click', function (e) {
+            if (!swipedAt) return;
+            var fromSwipe = Date.now() - swipedAt < CLICK_SUPPRESS_MS;
+            swipedAt = 0;
+            if (!fromSwipe) return;
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
 
         /* Task card expand / collapse, then the actions inside the panel.
            Independent toggles — opening one card never closes another. */
@@ -699,27 +972,15 @@
             var task = state.tasks.find(function (item) { return item.id === id; });
             if (!task) return;
 
+            /* The tick raises the same toast the swipe does — one action,
+               one piece of feedback. */
             if (button.classList.contains('mmpt-task-action-complete')) {
-                req('PUT', 'tasks/' + id + '/complete').then(function (updated) {
-                    var idx = state.tasks.findIndex(function (item) { return item.id === updated.id; });
-                    if (idx !== -1) state.tasks[idx] = updated;
-                    renderTasks();
-                }).catch(function (err) {
-                    alert(err.message || 'Error updating task.');
-                });
+                toggleTaskDone(id);
                 return;
             }
 
             if (button.classList.contains('mmpt-task-action-edit')) {
-                $('#mmpt-task-edit-id').value = task.id;
-                $('#mmpt-task-title').value = task.title;
-                $('#mmpt-task-description').value = task.description || '';
-                $('#mmpt-task-due-date').value = task.due_date || '';
-                $('#mmpt-task-colour').value = task.colour;
-                $('#mmpt-modal-task-title').textContent = 'Edit Task';
-                $('#mmpt-submit-task').textContent = 'Save Changes';
-                $('#mmpt-submit-task').disabled = false;
-                openModal('mmpt-modal-task');
+                openTaskEditor(id);
                 return;
             }
 

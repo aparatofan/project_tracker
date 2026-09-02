@@ -25,9 +25,21 @@
 
    v2.1 changes (Task Triage only):
    - Status filter is a .mmpt-statusswitch segmented control; the static
-     legend became the .mmpt-prio single-select priority filter.
+     legend became a single-select priority filter.
    - Priority group headings deleted — one continuous grid, sorted.
    - Task cards collapse to a dot and a title; icon actions in the panel.
+
+   v2.2 changes (Task Triage only — the tracker is untouched):
+   - Its own five-colour triage palette (--mmpt-p-* / --mmpt-pbg-*), no
+     longer borrowed from the project status tokens.
+   - The priority pills became .mmpt-swatches: six unlabelled solid
+     swatches carrying a count, named by tooltip, aria-label and a live
+     caption below the row.
+   - Task cards sit in a .mmpt-swipe wrapper: left completes, right opens
+     the editor, at every width.
+   - Completing anything raises an .mmpt-toast with a 3s Undo.
+   - The colour <select> in the task form became .mmpt-pri, a radiogroup
+     of five colour buttons with its own live caption.
 
    All classes prefixed mmpt- to avoid Divi conflicts. */
 
@@ -78,6 +90,21 @@
     --mmpt-orange-bg:  #FBEEDC;  --mmpt-orange-edge:  #E2842A;  --mmpt-orange-ink:  #7A4408;
     --mmpt-black-bg:   #F4F5F7;  --mmpt-black-edge:   #3A4250;  --mmpt-black-ink:   #232C36;
     --mmpt-neutral-bg: #FFFFFF;  --mmpt-neutral-edge: #B8C0CA;
+
+    /* Triage palette — Task Triage only, in fixed severity order.
+       `none` (No chance) is black because it is a real triage state, not a
+       disabled one; it is selectable everywhere the other four are. */
+    --mmpt-p-critical: #D93F3F;
+    --mmpt-p-vital:    #E2842A;
+    --mmpt-p-advised:  #C9901E;
+    --mmpt-p-time:     #4E8A1E;
+    --mmpt-p-none:     #262B33;
+
+    --mmpt-pbg-critical: #FDECEC;
+    --mmpt-pbg-vital:    #FDF0E0;
+    --mmpt-pbg-advised:  #FCF3DC;
+    --mmpt-pbg-time:     #EDF6E6;
+    --mmpt-pbg-none:     #ECEDEF;
 
     max-width: var(--mmpt-maxw);
     margin: 0 auto;
@@ -281,7 +308,7 @@
 
 /* ─────────────────────────────────────────────
    5. Filters — chips (tracker), selects, search,
-      status switch and priority pills (triage)
+      status switch and colour swatches (triage)
    ───────────────────────────────────────────── */
 .mmpt-chips {
     display: flex;
@@ -396,84 +423,138 @@
     background: rgba(255, 255, 255, 0.22);
 }
 
-/* Task priority — single-select toggles that replaced the static legend.
-   The active pill fills with its own tint rather than the blue accent, so
-   it stays distinct from the status control above and matches the cards
-   it filters to. */
-.mmpt-prio {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
-    margin-bottom: 24px;
+/* Triage tone tokens — every element that carries a triage colour (filter
+   swatch, form colour button, task card) picks one of these six sets up,
+   so a single rule set below serves all of them and a colour is retuned in
+   exactly one place.
+     --c   the colour itself          --cbg  the card tint
+     --cf  26% of --c on white        --ct   82% of --c on black
+     --cr  55% of --c on white (the selected ring)
+   --cf / --ct / --cr are the precomputed color-mix() results; they are the
+   fallback for engines without color-mix() (Safari below 16.2), declared
+   ahead of the live color-mix() value everywhere they are used. */
+.mmpt-app [data-tone="critical"] {
+    --c: var(--mmpt-p-critical); --cbg: var(--mmpt-pbg-critical);
+    --cf: #F5CDCD; --ct: #B23434; --cr: #EA9595;
 }
-.mmpt-prio__btn {
-    height: 40px;
-    padding: 0 16px;
-    border: 1px solid var(--mmpt-line);
-    border-radius: var(--mmpt-radius-pill);
-    background: var(--mmpt-surface);
-    color: var(--mmpt-ink-2);
-    font-size: 15px;
+.mmpt-app [data-tone="vital"] {
+    --c: var(--mmpt-p-vital);    --cbg: var(--mmpt-pbg-vital);
+    --cf: #F7DFC8; --ct: #B96C22; --cr: #EFBB8A;
+}
+.mmpt-app [data-tone="advised"] {
+    --c: var(--mmpt-p-advised);  --cbg: var(--mmpt-pbg-advised);
+    --cf: #F1E2C5; --ct: #A57619; --cr: #E1C283;
+}
+.mmpt-app [data-tone="if-time"] {
+    --c: var(--mmpt-p-time);     --cbg: var(--mmpt-pbg-time);
+    --cf: #D1E1C5; --ct: #407119; --cr: #9EBF83;
+}
+.mmpt-app [data-tone="no-chance"] {
+    --c: var(--mmpt-p-none);     --cbg: var(--mmpt-pbg-none);
+    --cf: #C7C8CA; --ct: #1F232A; --cr: #888A8F;
+}
+.mmpt-app [data-tone="all"] {
+    --c: var(--mmpt-accent);     --cbg: var(--mmpt-accent-tint);
+    --cf: #D0DAE8; --ct: #3D5B87; --cr: #9BB0CE;
+}
+
+/* Tooltips — the swatches and the form colour buttons carry no text, so
+   data-tip names them on hover and on keyboard focus. Not `title`: the
+   browser's own delay is far too long to be useful here. */
+.mmpt-app [data-tip] { position: relative; }
+.mmpt-app [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 7px);
+    transform: translateX(-50%);
+    padding: 6px 9px;
+    border-radius: var(--mmpt-radius-sm);
+    background: #20252C;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s;
+    z-index: 30;
+}
+.mmpt-app [data-tip]:hover::after,
+.mmpt-app [data-tip]:focus-visible::after { opacity: 1; visibility: visible; }
+/* The end tips would otherwise hang off the page at 390px */
+.mmpt-app [data-tip]:first-child::after { left: 0; transform: none; }
+.mmpt-app [data-tip]:last-child::after { left: auto; right: 0; transform: none; }
+
+/* Triage colour filter — six solid swatches, no text labels: All, then the
+   five priorities in fixed severity order. Same visual family as the
+   `+ New task` button — solid fill, --mmpt-radius, no pill, no outline.
+   The row is its own stacking context so a tooltip clears the card grid. */
+.mmpt-swatches {
+    display: flex;
+    gap: 6px;
+    margin: 12px 0 6px;
+    position: relative;
+    z-index: 5;
+}
+.mmpt-sw {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 46px;
+    border: 2px solid transparent;
+    border-radius: var(--mmpt-radius);
+    background: var(--c);
+    color: #FFFFFF;
+    cursor: pointer;
+    position: relative;
+    font-family: var(--mmpt-font);
+    font-size: 13px;
     font-weight: 600;
     line-height: 1;
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    justify-content: center;
+    transition: background 0.12s, color 0.12s, box-shadow 0.12s, transform 0.08s;
 }
-.mmpt-prio__btn:hover:not([disabled]) { border-color: var(--p-edge); }
-.mmpt-prio__dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--p-edge);
-    flex: none;
-}
-.mmpt-prio__btn[aria-pressed="true"] {
-    background: var(--p-bg);
-    border-color: var(--p-edge);
-    color: var(--p-ink);
-}
-.mmpt-prio__btn[disabled] { opacity: 0.4; cursor: default; }
-.mmpt-prio__count {
-    font-size: 12px;
+.mmpt-sw:active { transform: scale(0.97); }
+.mmpt-sw__count {
+    font-size: 11.5px;
     font-weight: 600;
-    min-width: 22px;
-    padding: 0 7px;
+    padding: 1px 6px;
     border-radius: var(--mmpt-radius-pill);
-    background: rgba(0, 0, 0, 0.07);
-    color: inherit;
-    line-height: 20px;
+    background: rgba(255, 255, 255, 0.26);
     font-variant-numeric: tabular-nums;
 }
+/* Unselected is a faded fill, never an outline */
+.mmpt-sw[aria-pressed="false"] {
+    background: var(--cf);
+    background: color-mix(in srgb, var(--c) 26%, #fff);
+    color: var(--ct);
+    color: color-mix(in srgb, var(--c) 82%, #000);
+}
+.mmpt-sw[aria-pressed="false"] .mmpt-sw__count { background: rgba(0, 0, 0, 0.10); }
+.mmpt-sw[aria-pressed="true"] {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--cr);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px color-mix(in srgb, var(--c) 55%, #fff);
+}
+/* A colour with nothing to show. All is never disabled. */
+.mmpt-sw[disabled] { opacity: 0.42; cursor: default; }
 
-/* Priority tokens — one set per triage level, read by both the filter
-   pills above and the task cards in §9, so a colour is retuned in one
-   place. Values are the card tokens from §1. */
-.mmpt-prio__btn[data-priority="critical"],
-.mmpt-task-card[data-priority="critical"] {
-    --p-bg: var(--mmpt-red-bg);    --p-edge: var(--mmpt-red-edge);    --p-ink: var(--mmpt-red-ink);
+/* With unlabelled swatches this caption is the only text naming the active
+   colour, so it is always visible. The fixed height stops the card grid
+   jumping as the wording changes. */
+.mmpt-app .mmpt-filter-caption {
+    margin: 0 0 24px;
+    min-height: 18px;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--mmpt-ink-2);
 }
-.mmpt-prio__btn[data-priority="vital"],
-.mmpt-task-card[data-priority="vital"] {
-    --p-bg: var(--mmpt-orange-bg); --p-edge: var(--mmpt-orange-edge); --p-ink: var(--mmpt-orange-ink);
-}
-.mmpt-prio__btn[data-priority="advised"],
-.mmpt-task-card[data-priority="advised"] {
-    --p-bg: var(--mmpt-amber-bg);  --p-edge: var(--mmpt-amber-edge);  --p-ink: var(--mmpt-amber-ink);
-}
-.mmpt-prio__btn[data-priority="if-time"],
-.mmpt-task-card[data-priority="if-time"] {
-    --p-bg: var(--mmpt-green-bg);  --p-edge: var(--mmpt-green-edge);  --p-ink: var(--mmpt-green-ink);
-}
-.mmpt-prio__btn[data-priority="no-chance"],
-.mmpt-task-card[data-priority="no-chance"] {
-    --p-bg: var(--mmpt-black-bg);  --p-edge: var(--mmpt-black-edge);  --p-ink: var(--mmpt-black-ink);
-}
-.mmpt-prio__btn[data-priority="all"] {
-    --p-bg: var(--mmpt-track);     --p-edge: var(--mmpt-accent);      --p-ink: var(--mmpt-ink);
+.mmpt-app .mmpt-filter-caption b {
+    font-weight: 600;
+    color: var(--mmpt-ink);
 }
 
 /* ─────────────────────────────────────────────
@@ -692,9 +773,9 @@
    Due date, description and the actions all live in the panel.
    ───────────────────────────────────────────── */
 .mmpt-task-card {
-    /* Priority tint and border come from the tokens set in §5 */
-    --card-bg: var(--p-bg);
-    --card-border: var(--p-edge);
+    /* Tint and border come from the tone tokens the card carries (§5) */
+    --card-bg: var(--cbg);
+    --card-border: var(--c);
     padding: 0;   /* the toggle and the panel carry their own padding */
 }
 
@@ -723,7 +804,7 @@
     width: 14px;    /* was 10px — larger now it carries the grouping alone */
     height: 14px;
     border-radius: 50%;
-    background: var(--p-edge);
+    background: var(--c);
     flex: none;
 }
 .mmpt-card__title {
@@ -837,6 +918,96 @@
 }
 .mmpt-iconbtn:focus-visible {
     outline: 2px solid var(--mmpt-accent);
+    outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────
+   9c. Swipe — Task Triage cards only
+   The wrapper clips the card and owns the gesture. touch-action:pan-y is
+   what lets the browser keep the vertical scroll while the horizontal axis
+   is ours; it is not optional. Project Tracker cards get none of this.
+   ───────────────────────────────────────────── */
+.mmpt-swipe {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--mmpt-radius);
+    touch-action: pan-y;
+}
+/* Behind the card, and painted only while a drag is in flight — a
+   completed card is translucent, so a rail left showing would read
+   straight through it. data-dir is set on the wrapper for the length of
+   the gesture and follows the direction, so the background tracks a
+   change of mind mid-drag. */
+.mmpt-swipe__rail {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    color: #FFFFFF;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+}
+.mmpt-swipe[data-dir] .mmpt-swipe__rail { opacity: 1; }
+.mmpt-swipe[data-dir="left"]  .mmpt-swipe__rail { background: var(--mmpt-p-time); }
+.mmpt-swipe[data-dir="right"] .mmpt-swipe__rail { background: var(--mmpt-accent); }
+.mmpt-swipe[data-dir="left"]  .mmpt-act--edit,
+.mmpt-swipe[data-dir="right"] .mmpt-act--done { opacity: 0; }
+.mmpt-act {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+/* A drag must not paint a text selection across the card */
+.mmpt-swipe--active { user-select: none; -webkit-user-select: none; }
+/* Added on release only, so the drag itself is never transitioned */
+.mmpt-card--animate { transition: transform 0.22s cubic-bezier(0.2, 0.7, 0.3, 1); }
+
+/* ─────────────────────────────────────────────
+   9d. Undo toast
+   Above the cards, below the modals. role="status" on the host, so it is
+   announced without stealing focus.
+   ───────────────────────────────────────────── */
+.mmpt-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(26px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 999990;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    /* Fixed and left:50%, so the box would otherwise shrink to the half of
+       the viewport it has room in and wrap the text. */
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    padding: 11px 12px 11px 18px;
+    border-radius: var(--mmpt-radius);
+    background: #20252C;
+    color: #FFFFFF;
+    font-size: 14px;
+    line-height: 1.3;
+    box-shadow: 0 10px 30px rgba(20, 30, 40, 0.30);
+}
+.mmpt-toast__undo {
+    flex: none;
+    border: 0;
+    background: transparent;
+    color: #8FB4E8;
+    font-family: var(--mmpt-font);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 8px 10px;
+    border-radius: var(--mmpt-radius-sm);
+    cursor: pointer;
+}
+.mmpt-toast__undo:hover { background: rgba(255, 255, 255, 0.10); }
+.mmpt-toast__undo:focus-visible {
+    outline: 2px solid #8FB4E8;
     outline-offset: 2px;
 }
 
@@ -956,6 +1127,46 @@
 .mmpt-field textarea { resize: vertical; line-height: 1.5; }
 .mmpt-field-row { display: flex; gap: 12px; }
 
+/* Triage colour — five colour buttons in place of a <select>, same
+   colours, same order and same language as the filter row, so what is
+   chosen here is what is filtered by there. No counts: those are a
+   filtering idea, not an authoring one. */
+.mmpt-pri {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.mmpt-pri button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 46px;
+    border: 2px solid transparent;
+    border-radius: var(--mmpt-radius);
+    cursor: pointer;
+    background: var(--cf);
+    background: color-mix(in srgb, var(--c) 26%, #fff);
+    transition: background 0.12s, box-shadow 0.12s, transform 0.08s;
+}
+.mmpt-pri button:active { transform: scale(0.97); }
+.mmpt-pri button[aria-checked="true"] {
+    background: var(--c);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--cr);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px color-mix(in srgb, var(--c) 55%, #fff);
+}
+/* The buttons carry no labels, so this is the only text naming the
+   choice — it never hides. */
+.mmpt-app .mmpt-pri-caption {
+    margin: 0;
+    min-height: 18px;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--mmpt-ink-2);
+}
+.mmpt-app .mmpt-pri-caption b {
+    font-weight: 600;
+    color: var(--mmpt-ink);
+}
+
 .mmpt-form-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 280px;
@@ -1069,7 +1280,10 @@
     /* Keep every control a comfortable tap target */
     .mmpt-btn { min-height: 44px; }
     .mmpt-chip { min-height: 40px; }
-    .mmpt-prio__btn { height: 44px; }
+
+    /* Six swatches share a 390px row: ~55px each, wide enough for a
+       2-digit count (three digits clamp to 99+ in the markup). */
+    .mmpt-swatches { gap: 5px; }
 
     /* 16px stops iOS Safari zooming the page on focus */
     .mmpt-select,
@@ -1116,4 +1330,7 @@
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
     }
+    /* The swipe gesture still works — only the snap-back and the exit
+       animation go. */
+    .mmpt-card--animate { transition: none !important; }
 }
