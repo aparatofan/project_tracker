@@ -55,7 +55,7 @@ which covers most layouts on its own.
 * Task Triage: the status bar and the colour bar now read as two rows of
   one control — both run the full width and share a fill, a padding and a
   height, so the Open tab, the first swatch and the caption line up on one
-  left edge. The status tabs keep their own width rather than stretching
+  left edge. Open / Completed / All divide the bar evenly, a third each
 * Task Triage: swipe a task card left to complete it (or reopen a
   completed one) and right to open its editor — mouse, touch and pen, at
   every width. Vertical scrolling is untouched, and a tap still expands
