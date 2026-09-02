@@ -80,44 +80,43 @@
             </button>
         </div>
 
-        <!-- Priority: single-select toggles. Counts are filled in by JS. -->
-        <div class="mmpt-prio" role="group" aria-label="Filter tasks by priority">
-            <button type="button" class="mmpt-prio__btn" data-priority="all" aria-pressed="true">
-                <span class="mmpt-prio__dot" aria-hidden="true"></span>
-                <span>All</span>
-                <span class="mmpt-prio__count">0</span>
+        <!-- Triage colour: six single-select swatches, no text labels.
+             Counts, aria-labels and the caption below are filled in by JS. -->
+        <div class="mmpt-swatches" role="group" aria-label="Filter by triage colour">
+            <button type="button" class="mmpt-sw" data-filter="all" data-tone="all"
+                    data-tip="All" aria-pressed="true" aria-label="All colours, 0 tasks">
+                <span class="mmpt-sw__count" aria-hidden="true">0</span>
             </button>
-            <button type="button" class="mmpt-prio__btn" data-priority="critical" aria-pressed="false">
-                <span class="mmpt-prio__dot" aria-hidden="true"></span>
-                <span>Critical</span>
-                <span class="mmpt-prio__count">0</span>
+            <button type="button" class="mmpt-sw" data-filter="critical" data-tone="critical"
+                    data-tip="Critical" aria-pressed="false" aria-label="Critical, 0 tasks">
+                <span class="mmpt-sw__count" aria-hidden="true">0</span>
             </button>
-            <button type="button" class="mmpt-prio__btn" data-priority="vital" aria-pressed="false">
-                <span class="mmpt-prio__dot" aria-hidden="true"></span>
-                <span>Vital</span>
-                <span class="mmpt-prio__count">0</span>
+            <button type="button" class="mmpt-sw" data-filter="vital" data-tone="vital"
+                    data-tip="Vital" aria-pressed="false" aria-label="Vital, 0 tasks">
+                <span class="mmpt-sw__count" aria-hidden="true">0</span>
             </button>
-            <button type="button" class="mmpt-prio__btn" data-priority="advised" aria-pressed="false">
-                <span class="mmpt-prio__dot" aria-hidden="true"></span>
-                <span>Advised</span>
-                <span class="mmpt-prio__count">0</span>
+            <button type="button" class="mmpt-sw" data-filter="advised" data-tone="advised"
+                    data-tip="Advised" aria-pressed="false" aria-label="Advised, 0 tasks">
+                <span class="mmpt-sw__count" aria-hidden="true">0</span>
             </button>
-            <button type="button" class="mmpt-prio__btn" data-priority="if-time" aria-pressed="false">
-                <span class="mmpt-prio__dot" aria-hidden="true"></span>
-                <span>If there&rsquo;s time</span>
-                <span class="mmpt-prio__count">0</span>
+            <button type="button" class="mmpt-sw" data-filter="if-time" data-tone="if-time"
+                    data-tip="If there&rsquo;s time" aria-pressed="false" aria-label="If there&rsquo;s time, 0 tasks">
+                <span class="mmpt-sw__count" aria-hidden="true">0</span>
             </button>
-            <button type="button" class="mmpt-prio__btn" data-priority="no-chance" aria-pressed="false">
-                <span class="mmpt-prio__dot" aria-hidden="true"></span>
-                <span>No chance</span>
-                <span class="mmpt-prio__count">0</span>
+            <button type="button" class="mmpt-sw" data-filter="no-chance" data-tone="no-chance"
+                    data-tip="No chance" aria-pressed="false" aria-label="No chance, 0 tasks">
+                <span class="mmpt-sw__count" aria-hidden="true">0</span>
             </button>
         </div>
+        <p id="mmpt-filter-caption" class="mmpt-filter-caption" aria-live="polite">Showing <b>every colour</b> &mdash; 0 tasks</p>
 
         <div id="mmpt-tasks" class="mmpt-grid">
             <div class="mmpt-loading">Loading tasks...</div>
         </div>
     </section>
+
+    <!-- Undo toast — a persistent live region, filled in by JS -->
+    <div id="mmpt-toast" class="mmpt-toast" role="status" aria-live="polite" hidden></div>
 
     <!-- Task Modal -->
     <div id="mmpt-modal-task" class="mmpt-modal" style="display:none;">
@@ -138,22 +137,30 @@
                     <label for="mmpt-task-description">Description</label>
                     <textarea id="mmpt-task-description" rows="4" placeholder="Add any useful details..."></textarea>
                 </div>
-                <div class="mmpt-field-row">
-                    <div class="mmpt-field">
-                        <label for="mmpt-task-due-date">Due date</label>
-                        <input type="date" id="mmpt-task-due-date" />
+                <div class="mmpt-field">
+                    <label for="mmpt-task-due-date">Due date</label>
+                    <input type="date" id="mmpt-task-due-date" />
+                </div>
+                <div class="mmpt-field">
+                    <!-- Colour only, no text labels: the tooltip, the aria-label
+                         and the caption below name the choice. A new task
+                         defaults to Vital; there is no unset state. -->
+                    <label id="mmpt-task-colour-label">Triage colour *</label>
+                    <div id="mmpt-task-colour-group" class="mmpt-pri" role="radiogroup"
+                         aria-labelledby="mmpt-task-colour-label">
+                        <button type="button" data-colour="red" data-tone="critical" data-tip="Critical"
+                                role="radio" aria-checked="false" aria-label="Critical" tabindex="-1"></button>
+                        <button type="button" data-colour="orange" data-tone="vital" data-tip="Vital"
+                                role="radio" aria-checked="true" aria-label="Vital" tabindex="0"></button>
+                        <button type="button" data-colour="yellow" data-tone="advised" data-tip="Advised"
+                                role="radio" aria-checked="false" aria-label="Advised" tabindex="-1"></button>
+                        <button type="button" data-colour="green" data-tone="if-time" data-tip="If there&rsquo;s time"
+                                role="radio" aria-checked="false" aria-label="If there&rsquo;s time" tabindex="-1"></button>
+                        <button type="button" data-colour="black" data-tone="no-chance" data-tip="No chance"
+                                role="radio" aria-checked="false" aria-label="No chance" tabindex="-1"></button>
                     </div>
-                    <div class="mmpt-field">
-                        <label for="mmpt-task-colour">Triage colour *</label>
-                        <select id="mmpt-task-colour" required>
-                            <option value="">Choose a colour...</option>
-                            <option value="red">Red — critical</option>
-                            <option value="orange">Orange — vital</option>
-                            <option value="yellow">Yellow — advised</option>
-                            <option value="green">Green — if there’s time</option>
-                            <option value="black">Black — no chance</option>
-                        </select>
-                    </div>
+                    <p id="mmpt-task-colour-caption" class="mmpt-pri-caption" aria-live="polite">Selected: <b>Vital</b></p>
+                    <input type="hidden" id="mmpt-task-colour" value="orange" />
                 </div>
                 <div class="mmpt-form-actions">
                     <button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-modal-close">Cancel</button>

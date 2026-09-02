@@ -3,7 +3,7 @@
  * Plugin Name: MM Project Tracker
  * Plugin URI:  https://mariuszmirecki.pl
  * Description: A personal project and task triage tool — "Begin with the end in mind." (Covey Habit 2)
- * Version:     1.4.0
+ * Version:     1.5.0
  * Author:      Mariusz Mirecki
  * Author URI:  https://mariuszmirecki.pl
  * Text Domain: mm-project-tracker
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'MMPT_VERSION', '1.4.0' );
+define( 'MMPT_VERSION', '1.5.0' );
 define( 'MMPT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MMPT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
