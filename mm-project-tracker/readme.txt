@@ -4,7 +4,7 @@ Tags: project management, tracker, personal
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 
 A personal project management tool — "Begin with the end in mind." (Covey Habit 2)
@@ -21,6 +21,8 @@ Features:
 * Archive/restore workflow
 * REST API for future integrations
 * Task Triage with five colour-coded urgency levels
+* Combined status and priority filtering, with live counts
+* Collapsible task cards with icon actions
 * Due-date countdowns and priority/date ordering
 * Task editing, completion, reopening, and deletion
 
@@ -40,6 +42,23 @@ also releases `.et_pb_row` / `.et_pb_row_inner` containing the app in CSS,
 which covers most layouts on its own.
 
 == Changelog ==
+
+= 1.4.0 =
+* Both views: the card grid is one column below 1024px, so a tablet in
+  portrait no longer gets two cramped columns; two columns below 1400px
+* Both views: the mode switch runs the full width, with the view title and
+  its primary action on a new row beneath it
+* Task Triage: the status filter is now a segmented control matching the
+  mode switch, with arrow-key navigation
+* Task Triage: the static colour legend became a single-select priority
+  filter — counts follow the status filter, empty priorities are dimmed
+* Task Triage: priority group headings removed; one continuous grid, still
+  sorted Critical to No chance and by due date within each priority
+* Task Triage: task cards collapse to a priority dot and the title, and
+  expand to reveal the description, due date and actions
+* Task Triage: Complete / Edit / Delete are icon buttons with labelled
+  tooltips; delete keeps its confirmation step
+* Triage filter selections survive switching to the Project Tracker and back
 
 = 1.3.0 =
 * Visual redesign: slate-blue accent, 12px radii, new ink and status palette

@@ -12,9 +12,35 @@
         projects: [],
         tasks: [],
         filter: { status: 'publish', priority: '', sort: 'neglected', search: '' },
-        taskFilter: 'open',
+        taskFilter: 'open',        /* open | completed | all */
+        taskPriority: 'all',       /* all | critical | vital | advised | if-time | no-chance */
+        openTasks: {},             /* task id -> true, survives a re-render */
         counts: { active: 0, archived: 0, milestones: 0 },
     };
+
+    /* Triage filter selections survive a trip to the Project Tracker and
+       back. sessionStorage can throw outright in private mode, so every
+       access is guarded. */
+    var TRIAGE_STORE_KEY = 'mmpt-triage-filters';
+
+    function readStoredTriageFilters() {
+        try {
+            var raw = window.sessionStorage.getItem(TRIAGE_STORE_KEY);
+            var parsed = raw ? JSON.parse(raw) : null;
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function persistTriageFilters() {
+        try {
+            window.sessionStorage.setItem(TRIAGE_STORE_KEY, JSON.stringify({
+                status: state.taskFilter,
+                priority: state.taskPriority,
+            }));
+        } catch (e) { /* nothing to do — the filters just won't be remembered */ }
+    }
 
     /* ───── Helpers ───── */
     function req(method, path, body) {
@@ -249,13 +275,40 @@
         container.innerHTML = visible.map(renderCard).join('');
     }
 
-    var TASK_COLOURS = [
-        { key: 'red', label: 'Critical' },
-        { key: 'orange', label: 'Vital' },
-        { key: 'yellow', label: 'Advised' },
-        { key: 'green', label: 'If there’s time' },
-        { key: 'black', label: 'No chance' },
+    /* The stored value is the colour; the slug is what the markup, the CSS
+       tokens and the priority filter speak. Severity order is the array
+       order — Critical first, No chance last. */
+    var TASK_PRIORITIES = [
+        { colour: 'red',    slug: 'critical',  label: 'Critical' },
+        { colour: 'orange', slug: 'vital',     label: 'Vital' },
+        { colour: 'yellow', slug: 'advised',   label: 'Advised' },
+        { colour: 'green',  slug: 'if-time',   label: 'If there’s time' },
+        { colour: 'black',  slug: 'no-chance', label: 'No chance' },
     ];
+
+    /* label is the human name the filter pills carry in the template; only
+       the slug and the order are needed at render time. */
+    var PRIORITY_BY_COLOUR = {};
+    TASK_PRIORITIES.forEach(function (p, i) {
+        PRIORITY_BY_COLOUR[p.colour] = { slug: p.slug, order: i };
+    });
+
+    /* The REST layer falls back to yellow for an unknown colour; match it. */
+    function priorityFor(colour) {
+        return PRIORITY_BY_COLOUR[colour] || PRIORITY_BY_COLOUR.yellow;
+    }
+
+    /* ───── Icons — inline SVG. Divi does not enqueue Dashicons on the
+       front end, so an icon font is not an option here. ───── */
+    var ICON_CHEVRON = '<svg class="mmpt-card__chevron" aria-hidden="true" viewBox="0 0 24 24">' +
+        '<path d="M6 9l6 6 6-6"/></svg>';
+    var ICON_COMPLETE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+    var ICON_REOPEN = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 9h10a5 5 0 0 1 0 10H9"/><path d="M8 5L4 9l4 4"/></svg>';
+    var ICON_EDIT = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 20h4L19.4 8.6a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/></svg>';
+    var ICON_DELETE = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 7h16M9 7V5h6v2M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
 
     function dueDateHtml(task) {
         if (!task.due_date) return '';
@@ -264,45 +317,67 @@
         var stateClass = '';
         if (days < 0) {
             label = 'Overdue by ' + Math.abs(days) + ' day' + (Math.abs(days) === 1 ? '' : 's');
-            stateClass = ' mmpt-task-due--overdue';
+            stateClass = ' mmpt-card__due--overdue';
         } else if (days === 0) {
             label = 'Due today';
-            stateClass = ' mmpt-task-due--today';
+            stateClass = ' mmpt-card__due--today';
         } else {
             label = days + ' day' + (days === 1 ? '' : 's') + ' left';
         }
-        return '<span class="mmpt-task-due' + stateClass + '">' +
+        return '<div class="mmpt-card__due' + stateClass + '">' +
             '<span>' + formatDueDate(task.due_date) + '</span>' +
             '<strong>' + label + '</strong>' +
-        '</span>';
+        '</div>';
     }
 
+    function iconButton(cls, action, label, icon, id) {
+        return '<button type="button" class="mmpt-iconbtn' + (cls ? ' ' + cls : '') + ' ' + action +
+            '" data-id="' + id + '" aria-label="' + label + '" title="' + label + '">' + icon + '</button>';
+    }
+
+    /* A collapsed card is the dot and the title, nothing else. Everything
+       else sits in the panel, which is inert while closed so Tab never
+       lands inside it. */
     function renderTask(task) {
+        var prio = priorityFor(task.colour);
+        var isOpen = !!state.openTasks[task.id];
+        var panelId = 'mmpt-task-panel-' + task.id;
         var description = task.description
-            ? '<p class="mmpt-task-description">' + esc(task.description) + '</p>'
+            ? '<p class="mmpt-card__desc">' + esc(task.description) + '</p>'
             : '';
-        var completeLabel = task.completed ? 'Reopen' : 'Complete';
+        var completeLabel = task.completed ? 'Reopen task' : 'Complete task';
         var completedClass = task.completed ? ' mmpt-task-card--completed' : '';
 
-        return '<article class="mmpt-card mmpt-task-card mmpt-task-card--' + task.colour + completedClass + '" data-id="' + task.id + '">' +
-            '<div class="mmpt-task-card-main">' +
-                '<span class="mmpt-dot mmpt-dot--' + task.colour + '" aria-hidden="true"></span>' +
-                '<div class="mmpt-task-content">' +
-                    '<h4>' + esc(task.title) + '</h4>' +
+        return '<article class="mmpt-card mmpt-task-card' + completedClass + '" data-priority="' + prio.slug +
+                '" data-id="' + task.id + '" data-open="' + (isOpen ? 'true' : 'false') + '">' +
+            '<button type="button" class="mmpt-card__toggle" aria-expanded="' + (isOpen ? 'true' : 'false') +
+                    '" aria-controls="' + panelId + '">' +
+                '<span class="mmpt-card__dot" aria-hidden="true"></span>' +
+                '<span class="mmpt-card__title">' + esc(task.title) + '</span>' +
+                ICON_CHEVRON +
+            '</button>' +
+            '<div class="mmpt-card__panel" id="' + panelId + '"' + (isOpen ? '' : ' inert') + '>' +
+                '<div class="mmpt-card__panel-inner">' +
                     description +
+                    dueDateHtml(task) +
+                    '<div class="mmpt-card__actions">' +
+                        iconButton('mmpt-iconbtn--primary', 'mmpt-task-action-complete', completeLabel,
+                                   task.completed ? ICON_REOPEN : ICON_COMPLETE, task.id) +
+                        iconButton('', 'mmpt-task-action-edit', 'Edit task', ICON_EDIT, task.id) +
+                        iconButton('mmpt-iconbtn--danger', 'mmpt-task-action-delete', 'Delete task', ICON_DELETE, task.id) +
+                    '</div>' +
                 '</div>' +
-                dueDateHtml(task) +
-            '</div>' +
-            '<div class="mmpt-task-actions">' +
-                '<button type="button" class="mmpt-btn mmpt-btn--primary mmpt-btn--sm mmpt-task-action-complete" data-id="' + task.id + '">' + completeLabel + '</button>' +
-                '<button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-btn--sm mmpt-task-action-edit" data-id="' + task.id + '">Edit</button>' +
-                '<button type="button" class="mmpt-btn mmpt-btn--ghost mmpt-btn--sm mmpt-task-action-delete" data-id="' + task.id + '">Delete</button>' +
             '</div>' +
         '</article>';
     }
 
+    /* Critical → No chance, then by due date within a priority, undated
+       last. The group headings are gone; this order is what carries it. */
     function sortTasks(tasks) {
         return tasks.slice().sort(function (a, b) {
+            var byPriority = priorityFor(a.colour).order - priorityFor(b.colour).order;
+            if (byPriority) return byPriority;
+
             if (a.due_date && b.due_date) {
                 var dateCompare = a.due_date.localeCompare(b.due_date);
                 if (dateCompare) return dateCompare;
@@ -323,32 +398,98 @@
         $('#mmpt-switch-count-tasks').textContent = open;
     }
 
-    function renderTasks() {
-        var container = $('#mmpt-tasks');
-        var visible = state.tasks.filter(function (task) {
+    function tasksInStatus() {
+        return state.tasks.filter(function (task) {
             if (state.taskFilter === 'open') return !task.completed;
             if (state.taskFilter === 'completed') return task.completed;
             return true;
         });
+    }
+
+    /* Counts are per priority within the current status filter, so they
+       recalculate whenever either filter moves. */
+    function renderPriorityFilter(inStatus) {
+        var counts = { all: inStatus.length };
+        TASK_PRIORITIES.forEach(function (p) { counts[p.slug] = 0; });
+        inStatus.forEach(function (task) { counts[priorityFor(task.colour).slug]++; });
+
+        /* A selection with nothing left to show falls back to All. */
+        if (state.taskPriority !== 'all' && !counts[state.taskPriority]) {
+            state.taskPriority = 'all';
+            persistTriageFilters();
+        }
+
+        $$('.mmpt-prio__btn').forEach(function (btn) {
+            var slug = btn.dataset.priority;
+            var count = counts[slug] || 0;
+            var countEl = btn.querySelector('.mmpt-prio__count');
+            if (countEl) countEl.textContent = count;
+            btn.setAttribute('aria-pressed', slug === state.taskPriority ? 'true' : 'false');
+            /* Dimmed, not hidden — the row must not reflow as tasks move.
+               All stays live so there is always a way back. */
+            btn.disabled = slug !== 'all' && count === 0;
+        });
+    }
+
+    /* inert is what keeps collapsed controls out of the tab order. Older
+       browsers ignore the attribute, so fall back to tabindex there. */
+    var SUPPORTS_INERT = typeof HTMLElement !== 'undefined' && 'inert' in HTMLElement.prototype;
+    var FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]';
+
+    function setPanelInert(panel, makeInert) {
+        if (SUPPORTS_INERT) {
+            panel.inert = makeInert;
+            return;
+        }
+        $$(FOCUSABLE, panel).forEach(function (el) {
+            if (makeInert) el.setAttribute('tabindex', '-1');
+            else el.removeAttribute('tabindex');
+        });
+    }
+
+    function applyInertFallback(container) {
+        if (SUPPORTS_INERT) return;
+        $$('.mmpt-card[data-open="false"] .mmpt-card__panel', container).forEach(function (panel) {
+            setPanelInert(panel, true);
+        });
+    }
+
+    function renderTasks() {
+        var container = $('#mmpt-tasks');
 
         renderTaskCounts();
+        var inStatus = tasksInStatus();
+        renderPriorityFilter(inStatus);
+
+        var visible = state.taskPriority === 'all'
+            ? inStatus
+            : inStatus.filter(function (task) {
+                return priorityFor(task.colour).slug === state.taskPriority;
+            });
 
         if (!visible.length) {
             container.innerHTML = '<div class="mmpt-empty">No tasks found.</div>';
             return;
         }
 
-        container.innerHTML = TASK_COLOURS.map(function (colour) {
-            var tasks = sortTasks(visible.filter(function (task) { return task.colour === colour.key; }));
-            if (!tasks.length) return '';
-            return '<section class="mmpt-task-group mmpt-task-group--' + colour.key + '">' +
-                '<div class="mmpt-task-group-heading">' +
-                    '<span><i class="mmpt-dot mmpt-dot--' + colour.key + '"></i>' + colour.label + '</span>' +
-                    '<span class="mmpt-group__count">' + tasks.length + '</span>' +
-                '</div>' +
-                '<div class="mmpt-task-list mmpt-grid">' + tasks.map(renderTask).join('') + '</div>' +
-            '</section>';
-        }).join('');
+        container.innerHTML = sortTasks(visible).map(renderTask).join('');
+        applyInertFallback(container);
+    }
+
+    function toggleTaskCard(card) {
+        var isOpen = card.dataset.open !== 'true';
+        var toggle = card.querySelector('.mmpt-card__toggle');
+        var panel = card.querySelector('.mmpt-card__panel');
+        var id = parseInt(card.dataset.id, 10);
+
+        card.dataset.open = isOpen ? 'true' : 'false';
+        if (toggle) toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (panel) setPanelInert(panel, !isOpen);
+
+        /* Remembered so a re-render (complete, edit, delete) doesn't slam
+           every open card shut. */
+        if (isOpen) state.openTasks[id] = true;
+        else delete state.openTasks[id];
     }
 
     function refresh() {
@@ -404,13 +545,24 @@
         $('#mmpt-submit-task').disabled = !(title && colour);
     }
 
+    var TASK_STATUSES = ['open', 'completed', 'all'];
+
+    function restoreTriageFilters() {
+        var stored = readStoredTriageFilters();
+        if (!stored) return;
+        if (TASK_STATUSES.indexOf(stored.status) !== -1) state.taskFilter = stored.status;
+        var slugs = TASK_PRIORITIES.map(function (p) { return p.slug; }).concat('all');
+        if (slugs.indexOf(stored.priority) !== -1) state.taskPriority = stored.priority;
+    }
+
     /* ───── Event Binding ───── */
     function init() {
+        restoreTriageFilters();
         loadProjects();
         loadTasks();
 
         /* Mode switch — tablist with roving tabindex and arrow-key nav.
-           The header's primary action follows the active view. */
+           The page head's title and primary action follow the active view. */
         var switchTabs = $$('.mmpt-switch__tab');
 
         function selectSection(section) {
@@ -423,6 +575,8 @@
             $('#mmpt-section-triage').hidden = section !== 'triage';
             $('#mmpt-new-btn').hidden = section !== 'projects';
             $('#mmpt-new-task-btn').hidden = section !== 'triage';
+            $('#mmpt-pagehead-title').textContent =
+                section === 'projects' ? 'Project Tracker' : 'Task Triage';
         }
 
         switchTabs.forEach(function (tab, index) {
@@ -479,19 +633,66 @@
             });
         });
 
-        /* Task Status Chips */
-        $$('.mmpt-chip[data-task-status]').forEach(function (chip) {
-            chip.addEventListener('click', function () {
-                $$('.mmpt-chip[data-task-status]').forEach(function (item) {
-                    item.setAttribute('aria-pressed', item === chip ? 'true' : 'false');
-                });
-                state.taskFilter = chip.dataset.taskStatus;
+        /* Task status — same tablist pattern as the main switch, smaller. */
+        var statusTabs = $$('.mmpt-statusswitch__tab');
+
+        function syncStatusTabs(status) {
+            statusTabs.forEach(function (tab) {
+                var selected = tab.dataset.taskStatus === status;
+                tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+                tab.tabIndex = selected ? 0 : -1;
+            });
+        }
+
+        function selectTaskStatus(status) {
+            syncStatusTabs(status);
+            state.taskFilter = status;
+            persistTriageFilters();
+            renderTasks();
+        }
+
+        statusTabs.forEach(function (tab, index) {
+            tab.addEventListener('click', function () {
+                selectTaskStatus(tab.dataset.taskStatus);
+            });
+            tab.addEventListener('keydown', function (e) {
+                var next;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = statusTabs[(index + 1) % statusTabs.length];
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = statusTabs[(index - 1 + statusTabs.length) % statusTabs.length];
+                else if (e.key === 'Home') next = statusTabs[0];
+                else if (e.key === 'End') next = statusTabs[statusTabs.length - 1];
+                if (!next) return;
+                e.preventDefault();
+                selectTaskStatus(next.dataset.taskStatus);
+                next.focus();
+            });
+        });
+
+        /* A restored selection has to reach the markup before first paint.
+           No render here — the tasks are still loading, and renderTasks()
+           would replace the loading line with "No tasks found". */
+        syncStatusTabs(state.taskFilter);
+
+        /* Task priority — single-select toggles. Clicking the active pill
+           returns to All; there is never more than one colour selected. */
+        $$('.mmpt-prio__btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var slug = btn.dataset.priority;
+                state.taskPriority = slug === state.taskPriority ? 'all' : slug;
+                persistTriageFilters();
                 renderTasks();
             });
         });
 
-        /* Task Actions */
+        /* Task card expand / collapse, then the actions inside the panel.
+           Independent toggles — opening one card never closes another. */
         $('#mmpt-tasks').addEventListener('click', function (e) {
+            var toggle = e.target.closest('.mmpt-card__toggle');
+            if (toggle) {
+                toggleTaskCard(toggle.closest('.mmpt-card'));
+                return;
+            }
+
             var button = e.target.closest('button');
             if (!button) return;
             var id = parseInt(button.dataset.id, 10);
@@ -533,6 +734,7 @@
             var id = parseInt($('#mmpt-task-delete-id').value, 10);
             req('DELETE', 'tasks/' + id).then(function () {
                 state.tasks = state.tasks.filter(function (task) { return task.id !== id; });
+                delete state.openTasks[id];
                 closeModal('mmpt-modal-task-delete');
                 renderTasks();
             }).catch(function (err) {

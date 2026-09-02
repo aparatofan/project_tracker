@@ -1,5 +1,6 @@
-/* MM Project Tracker — Frontend Styles v2.0
-   Design: "Progress Tracker redesign (v2)" for mariuszmirecki.pl
+/* MM Project Tracker — Frontend Styles v2.1
+   Design: "Progress Tracker redesign (v2)" + "refinement spec (round 2)"
+   for mariuszmirecki.pl
 
    Chrome is slate blue (--mmpt-accent). Status meaning is carried by the
    card itself: a 2px border on all four sides plus a matching tint, never
@@ -15,6 +16,18 @@
    - Card grid is 3 / 2 / 1 columns with a 20px gap, up to 1800px wide.
    - Filter chips (.mmpt-chip) and in-card tags (.mmpt-tag) are now two
      distinct things; v1 used .mmpt-chip for both.
+
+   v2.1 changes (both views):
+   - Grid drops to two columns under 1400px and one under 1024px, so a Tab
+     S9+ in portrait (~800px) gets a single column. Same for the modal form.
+   - The mode switch runs full width; a new .mmpt-pagehead below it carries
+     the view title (an <h2>) and the primary action.
+
+   v2.1 changes (Task Triage only):
+   - Status filter is a .mmpt-statusswitch segmented control; the static
+     legend became the .mmpt-prio single-select priority filter.
+   - Priority group headings deleted — one continuous grid, sorted.
+   - Task cards collapse to a dot and a title; icon actions in the panel.
 
    All classes prefixed mmpt- to avoid Divi conflicts. */
 
@@ -55,14 +68,15 @@
     --mmpt-track:   #EEF0F2;   /* mode-switch trough */
 
     /* Status palette — background / border / text.
-       Referenced by the card modifiers in §6 and by the legend dots. */
+       Referenced by the card modifiers in §7 and by the priority tokens
+       in §5. */
     --mmpt-red-bg:     #FCEBEB;  --mmpt-red-edge:     #D93F3F;  --mmpt-red-ink:     #7A1F1F;
     --mmpt-deep-bg:    #F6D7D7;  --mmpt-deep-edge:    #A32D2D;  --mmpt-deep-ink:    #501313;
     --mmpt-severe-bg:  #791F1F;  --mmpt-severe-edge:  #501313;  --mmpt-severe-ink:  #FCEBEB;
     --mmpt-amber-bg:   #FBF1D9;  --mmpt-amber-edge:   #C9901E;  --mmpt-amber-ink:   #633806;
     --mmpt-green-bg:   #EAF3E1;  --mmpt-green-edge:   #4E8A1E;  --mmpt-green-ink:   #27500A;
-    --mmpt-orange-bg:  #FBEEDC;  --mmpt-orange-edge:  #E2842A;
-    --mmpt-black-bg:   #F4F5F7;  --mmpt-black-edge:   #3A4250;
+    --mmpt-orange-bg:  #FBEEDC;  --mmpt-orange-edge:  #E2842A;  --mmpt-orange-ink:  #7A4408;
+    --mmpt-black-bg:   #F4F5F7;  --mmpt-black-edge:   #3A4250;  --mmpt-black-ink:   #232C36;
     --mmpt-neutral-bg: #FFFFFF;  --mmpt-neutral-edge: #B8C0CA;
 
     max-width: var(--mmpt-maxw);
@@ -123,18 +137,8 @@
 }
 
 /* ─────────────────────────────────────────────
-   3. Header row — mode switch + primary action
+   3. Mode switch (navigation) + page head
    ───────────────────────────────────────────── */
-.mmpt-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 28px;
-}
-
-.mmpt-header > .mmpt-btn { flex: 0 0 auto; }
-
 .mmpt-switch {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -144,7 +148,7 @@
     border: 1px solid var(--mmpt-line);
     border-radius: calc(var(--mmpt-radius) + 6px);   /* 18px */
     width: 100%;
-    max-width: 680px;
+    max-width: none;
 }
 .mmpt-switch__tab {
     height: 60px;
@@ -184,6 +188,28 @@
 }
 .mmpt-switch__tab[aria-selected="true"] .mmpt-switch__count {
     background: rgba(255, 255, 255, 0.22);
+}
+
+/* Page head — the active view's title on the left, its primary action on
+   the right. The switch above is now the navigation, so this <h2> is the
+   page heading proper.
+   Longhand rather than the `font:` shorthand: Divi styles h2 directly and
+   `font: … inherit` is not a valid shorthand (the family slot needs a real
+   family list), so it would be dropped entirely. */
+.mmpt-pagehead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 26px 0 20px;
+}
+.mmpt-pagehead > .mmpt-btn { flex: 0 0 auto; }
+.mmpt-app .mmpt-pagehead__title {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--mmpt-ink);
 }
 
 /* ─────────────────────────────────────────────
@@ -254,7 +280,8 @@
 }
 
 /* ─────────────────────────────────────────────
-   5. Filter chips, selects, search, legend
+   5. Filters — chips (tracker), selects, search,
+      status switch and priority pills (triage)
    ───────────────────────────────────────────── */
 .mmpt-chips {
     display: flex;
@@ -283,8 +310,7 @@
     color: var(--mmpt-accent-ink);
     border-color: var(--mmpt-accent);
 }
-.mmpt-chip__count,
-.mmpt-group__count {
+.mmpt-chip__count {
     font-size: 12px;
     font-weight: 600;
     padding: 2px 8px;
@@ -321,37 +347,134 @@
     outline: none;
 }
 
-.mmpt-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 22px;
-    background: var(--mmpt-canvas);
-    border-radius: var(--mmpt-radius);
-    padding: 12px 18px;
-    margin-bottom: 28px;
-    font-size: 14px;
-    color: var(--mmpt-ink-2);
+/* Task status — the main switch's visual language at a smaller scale.
+   Sized to its content, left aligned, not full width. */
+.mmpt-statusswitch {
+    display: inline-grid;
+    grid-auto-flow: column;
+    gap: 6px;
+    padding: 5px;
+    background: var(--mmpt-track);
+    border: 1px solid var(--mmpt-line);
+    border-radius: calc(var(--mmpt-radius) + 2px);   /* 14px */
 }
-.mmpt-legend span,
-.mmpt-task-group-heading > span:first-child {
+.mmpt-statusswitch__tab {
+    height: 42px;
+    padding: 0 20px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    border-radius: calc(var(--mmpt-radius) - 2px);   /* 10px */
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--mmpt-ink-2);
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    transition: background 0.15s, color 0.15s;
+}
+.mmpt-statusswitch__tab:hover { color: var(--mmpt-ink); }
+.mmpt-statusswitch__tab[aria-selected="true"] {
+    background: var(--mmpt-accent);
+    color: var(--mmpt-accent-ink);
+}
+.mmpt-statusswitch__tab[aria-selected="true"]:hover { color: var(--mmpt-accent-ink); }
+.mmpt-statusswitch__count {
+    font-size: 12px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: var(--mmpt-radius-pill);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.08);
+    font-variant-numeric: tabular-nums;
+}
+.mmpt-statusswitch__tab[aria-selected="true"] .mmpt-statusswitch__count {
+    background: rgba(255, 255, 255, 0.22);
 }
 
-.mmpt-dot {
-    display: inline-block;
+/* Task priority — single-select toggles that replaced the static legend.
+   The active pill fills with its own tint rather than the blue accent, so
+   it stays distinct from the status control above and matches the cards
+   it filters to. */
+.mmpt-prio {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    margin-bottom: 24px;
+}
+.mmpt-prio__btn {
+    height: 40px;
+    padding: 0 16px;
+    border: 1px solid var(--mmpt-line);
+    border-radius: var(--mmpt-radius-pill);
+    background: var(--mmpt-surface);
+    color: var(--mmpt-ink-2);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.mmpt-prio__btn:hover:not([disabled]) { border-color: var(--p-edge); }
+.mmpt-prio__dot {
     width: 10px;
     height: 10px;
-    flex: 0 0 10px;
-    border-radius: var(--mmpt-radius-pill);
-    background: var(--mmpt-neutral-edge);
+    border-radius: 50%;
+    background: var(--p-edge);
+    flex: none;
 }
-.mmpt-dot--red    { background: var(--mmpt-red-edge); }
-.mmpt-dot--orange { background: var(--mmpt-orange-edge); }
-.mmpt-dot--yellow { background: var(--mmpt-amber-edge); }
-.mmpt-dot--green  { background: var(--mmpt-green-edge); }
-.mmpt-dot--black  { background: var(--mmpt-black-edge); }
+.mmpt-prio__btn[aria-pressed="true"] {
+    background: var(--p-bg);
+    border-color: var(--p-edge);
+    color: var(--p-ink);
+}
+.mmpt-prio__btn[disabled] { opacity: 0.4; cursor: default; }
+.mmpt-prio__count {
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 22px;
+    padding: 0 7px;
+    border-radius: var(--mmpt-radius-pill);
+    background: rgba(0, 0, 0, 0.07);
+    color: inherit;
+    line-height: 20px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Priority tokens — one set per triage level, read by both the filter
+   pills above and the task cards in §9, so a colour is retuned in one
+   place. Values are the card tokens from §1. */
+.mmpt-prio__btn[data-priority="critical"],
+.mmpt-task-card[data-priority="critical"] {
+    --p-bg: var(--mmpt-red-bg);    --p-edge: var(--mmpt-red-edge);    --p-ink: var(--mmpt-red-ink);
+}
+.mmpt-prio__btn[data-priority="vital"],
+.mmpt-task-card[data-priority="vital"] {
+    --p-bg: var(--mmpt-orange-bg); --p-edge: var(--mmpt-orange-edge); --p-ink: var(--mmpt-orange-ink);
+}
+.mmpt-prio__btn[data-priority="advised"],
+.mmpt-task-card[data-priority="advised"] {
+    --p-bg: var(--mmpt-amber-bg);  --p-edge: var(--mmpt-amber-edge);  --p-ink: var(--mmpt-amber-ink);
+}
+.mmpt-prio__btn[data-priority="if-time"],
+.mmpt-task-card[data-priority="if-time"] {
+    --p-bg: var(--mmpt-green-bg);  --p-edge: var(--mmpt-green-edge);  --p-ink: var(--mmpt-green-ink);
+}
+.mmpt-prio__btn[data-priority="no-chance"],
+.mmpt-task-card[data-priority="no-chance"] {
+    --p-bg: var(--mmpt-black-bg);  --p-edge: var(--mmpt-black-edge);  --p-ink: var(--mmpt-black-ink);
+}
+.mmpt-prio__btn[data-priority="all"] {
+    --p-bg: var(--mmpt-track);     --p-edge: var(--mmpt-accent);      --p-ink: var(--mmpt-ink);
+}
 
 /* ─────────────────────────────────────────────
    6. Grid
@@ -395,13 +518,6 @@
 .mmpt-card--overdue-severe { --card-bg: var(--mmpt-severe-bg);  --card-border: var(--mmpt-severe-edge);  color: var(--mmpt-severe-ink); }
 .mmpt-card--due-soon       { --card-bg: var(--mmpt-amber-bg);   --card-border: var(--mmpt-amber-edge);   color: var(--mmpt-amber-ink); }
 .mmpt-card--on-track       { --card-bg: var(--mmpt-green-bg);   --card-border: var(--mmpt-green-edge);   color: var(--mmpt-green-ink); }
-
-/* Task priorities */
-.mmpt-task-card--red    { --card-bg: var(--mmpt-red-bg);    --card-border: var(--mmpt-red-edge); }
-.mmpt-task-card--orange { --card-bg: var(--mmpt-orange-bg); --card-border: var(--mmpt-orange-edge); }
-.mmpt-task-card--yellow { --card-bg: var(--mmpt-amber-bg);  --card-border: var(--mmpt-amber-edge); }
-.mmpt-task-card--green  { --card-bg: var(--mmpt-green-bg);  --card-border: var(--mmpt-green-edge); }
-.mmpt-task-card--black  { --card-bg: var(--mmpt-black-bg);  --card-border: var(--mmpt-black-edge); --tag-bg: #FFFFFF; }
 
 /* Card header: title on its own line, tags beneath, chevron pinned
    top-right and out of the flow. */
@@ -571,82 +687,157 @@
 }
 
 /* ─────────────────────────────────────────────
-   9. Task Triage
+   9. Task Triage — collapsible cards
+   A collapsed card is the priority dot and the title, nothing else.
+   Due date, description and the actions all live in the panel.
    ───────────────────────────────────────────── */
-.mmpt-task-groups { min-height: 80px; }
+.mmpt-task-card {
+    /* Priority tint and border come from the tokens set in §5 */
+    --card-bg: var(--p-bg);
+    --card-border: var(--p-edge);
+    padding: 0;   /* the toggle and the panel carry their own padding */
+}
 
-.mmpt-task-group-heading {
+.mmpt-card__toggle {
+    width: 100%;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
-    margin: 26px 0 12px;
-    font-size: 15px;
+    padding: 16px 18px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    font-size: 17px;
     font-weight: 600;
-    color: var(--mmpt-ink-2);
-    text-transform: none;
-    letter-spacing: 0;
+    line-height: 1.3;
+    color: var(--mmpt-ink);
 }
-.mmpt-task-group:first-child .mmpt-task-group-heading { margin-top: 0; }
-
-/* The title and the due-date chip share a row while the title still has
-   room for a sensible line length; below that the chip wraps to its own
-   line instead of squeezing the title into two words per line. */
-.mmpt-task-card-main {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 6px 10px;
+/* Inset so the ring stays inside the card's own 2px border */
+.mmpt-card__toggle:focus-visible {
+    outline: 3px solid var(--mmpt-accent-border);
+    outline-offset: -4px;
+    border-radius: var(--mmpt-radius);
 }
-.mmpt-task-card-main > .mmpt-dot { margin-top: 7px; }
-.mmpt-task-content { flex: 1 1 200px; min-width: 0; }
-.mmpt-app .mmpt-task-content h4 {
-    margin: 0;
-    font-size: 16.5px;
-    font-weight: 600;
-    line-height: 1.25;
-    color: inherit;
+.mmpt-card__dot {
+    width: 14px;    /* was 10px — larger now it carries the grouping alone */
+    height: 14px;
+    border-radius: 50%;
+    background: var(--p-edge);
+    flex: none;
+}
+.mmpt-card__title {
+    flex: 1;
+    min-width: 0;
     overflow-wrap: anywhere;
 }
-.mmpt-task-description {
-    margin: 6px 0 0;
+.mmpt-card__chevron {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    stroke: var(--mmpt-ink-3);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    transition: transform 0.18s ease;
+}
+.mmpt-card[data-open="true"] .mmpt-card__chevron { transform: rotate(180deg); }
+
+/* 0fr → 1fr animates to auto height without measuring in JS. The inner
+   wrapper must keep overflow: hidden or the content spills while closed. */
+.mmpt-card__panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.18s ease;
+}
+.mmpt-card[data-open="true"] .mmpt-card__panel { grid-template-rows: 1fr; }
+.mmpt-card__panel-inner { overflow: hidden; }
+.mmpt-card[data-open="true"] .mmpt-card__panel-inner { padding: 0 18px 16px; }
+
+.mmpt-card__desc {
+    margin: 0 0 12px;
     font-size: 14px;
     color: var(--mmpt-ink-2);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
-.mmpt-task-due {
+.mmpt-card__due {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    flex: 0 0 auto;
-    margin-left: auto;
+    margin-bottom: 14px;
     padding: 4px 9px;
     border-radius: var(--mmpt-radius-sm);
-    background: var(--tag-bg, rgba(255, 255, 255, 0.85));
+    background: rgba(255, 255, 255, 0.85);
     border: 1px solid rgba(0, 0, 0, 0.06);
     font-size: 12.5px;
     color: var(--mmpt-ink-2);
     white-space: nowrap;
 }
-.mmpt-task-due strong {
+.mmpt-card__due strong {
     font-weight: 600;
     color: var(--mmpt-green-ink);
 }
-.mmpt-task-due--today strong,
-.mmpt-task-due--overdue strong { color: var(--mmpt-deep-edge); }
+.mmpt-card__due--today strong,
+.mmpt-card__due--overdue strong { color: var(--mmpt-deep-edge); }
 
 .mmpt-task-card--completed { opacity: 0.6; }
-.mmpt-task-card--completed h4 { text-decoration: line-through; }
+.mmpt-task-card--completed .mmpt-card__title { text-decoration: line-through; }
 
-.mmpt-task-actions {
+/* ─────────────────────────────────────────────
+   9b. Icon actions
+   Inline SVG rather than Dashicons — Divi does not enqueue Dashicons on
+   the front end.
+   ───────────────────────────────────────────── */
+.mmpt-card__actions {
     display: flex;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 6px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    gap: 8px;
+}
+.mmpt-iconbtn {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--mmpt-line);
+    border-radius: calc(var(--mmpt-radius) - 2px);   /* 10px */
+    background: var(--mmpt-surface);
+    color: var(--mmpt-ink-2);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.mmpt-iconbtn svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.mmpt-iconbtn:hover {
+    border-color: var(--mmpt-accent-border);
+    color: var(--mmpt-ink);
+}
+.mmpt-iconbtn--primary {
+    background: var(--mmpt-accent);
+    border-color: var(--mmpt-accent);
+    color: var(--mmpt-accent-ink);
+}
+.mmpt-iconbtn--primary:hover {
+    background: var(--mmpt-accent-dark);
+    border-color: var(--mmpt-accent-dark);
+    color: var(--mmpt-accent-ink);
+}
+.mmpt-iconbtn--danger:hover {
+    border-color: var(--mmpt-red-edge);
+    color: var(--mmpt-red-edge);
+    background: var(--mmpt-red-bg);
+}
+.mmpt-iconbtn:focus-visible {
+    outline: 2px solid var(--mmpt-accent);
+    outline-offset: 2px;
 }
 
 /* ─────────────────────────────────────────────
@@ -832,31 +1023,53 @@
 }
 
 /* ─────────────────────────────────────────────
-   13. Responsive — 2 columns under 1000px
+   13. Responsive — two columns under 1400px
+   Explicit track counts, never auto-fill: auto-fill computes the number
+   of columns from the available width, so no media query can override it.
    ───────────────────────────────────────────── */
-@media (max-width: 1000px) {
+@media (max-width: 1400px) {
     .mmpt-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .mmpt-tools { grid-template-columns: 1fr 1fr; }
     .mmpt-search { grid-column: 1 / -1; }
 }
 
 /* ─────────────────────────────────────────────
-   14. Responsive — single column under 640px
+   14. Responsive — one column under 1024px
+   A Tab S9+ in portrait reports ~800 CSS px and lands here: one column of
+   cards, and the modal form stacks on the same devices.
+   ───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .mmpt-grid  { grid-template-columns: 1fr; }
+    .mmpt-tools { grid-template-columns: 1fr; }
+
+    .mmpt-form-grid { grid-template-columns: 1fr; gap: 14px; }
+    .mmpt-field-row { flex-direction: column; }
+
+    /* Comfortable tap targets once we are on a touch device */
+    .mmpt-iconbtn { width: 44px; height: 44px; }
+}
+
+/* ─────────────────────────────────────────────
+   15. Responsive — phone layout under 640px
    ───────────────────────────────────────────── */
 @media (max-width: 640px) {
     .mmpt-app { padding: 24px 16px calc(40px + env(safe-area-inset-bottom)); }
 
-    .mmpt-grid  { grid-template-columns: 1fr; }
-    .mmpt-tools { grid-template-columns: 1fr; }
-    .mmpt-header { flex-direction: column; align-items: stretch; }
-    .mmpt-header .mmpt-btn--primary { width: 100%; }
+    .mmpt-pagehead { flex-direction: column; align-items: stretch; }
+    .mmpt-pagehead .mmpt-btn { width: 100%; }
+    .mmpt-app .mmpt-pagehead__title { font-size: 23px; }
 
-    .mmpt-switch { max-width: none; }
     .mmpt-switch__tab { height: 52px; font-size: 16px; }
+
+    /* The status switch is content-sized; on a narrow screen let the three
+       tabs share the row evenly instead of overflowing it. */
+    .mmpt-statusswitch { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+    .mmpt-statusswitch__tab { padding: 0 10px; justify-content: center; }
 
     /* Keep every control a comfortable tap target */
     .mmpt-btn { min-height: 44px; }
     .mmpt-chip { min-height: 40px; }
+    .mmpt-prio__btn { height: 44px; }
 
     /* 16px stops iOS Safari zooming the page on focus */
     .mmpt-select,
@@ -865,20 +1078,6 @@
     .mmpt-field textarea,
     .mmpt-field select { font-size: 16px; }
 
-    /* Dot beside the title, due-date chip directly under it */
-    .mmpt-task-card-main {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: 6px 10px;
-    }
-    .mmpt-task-due {
-        grid-column: 2;
-        margin-left: 0;
-        justify-self: start;
-    }
-
-    .mmpt-field-row { flex-direction: column; }
-    .mmpt-form-grid { grid-template-columns: 1fr; gap: 14px; }
     .mmpt-footer {
         flex-direction: column;
         align-items: center;
@@ -908,7 +1107,7 @@
 }
 
 /* ─────────────────────────────────────────────
-   15. Reduced motion
+   16. Reduced motion
    ───────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
     .mmpt-app *,
