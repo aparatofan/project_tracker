@@ -71,11 +71,8 @@
     --mmpt-maxw:          1800px;    /* content max-width on large screens */
 
     /* The two triage filter bars. Equal padding is what puts the Open tab
-       and the first swatch on the same x; --mmpt-tab-w is the fixed tab
-       column, sized just past the widest tab ("Completed 9" at 148px) so
-       nothing is squeezed. Nudge it alone — see §5. */
+       and the first swatch on the same x. */
     --mmpt-bar-pad:       5px;
-    --mmpt-tab-w:         150px;
 
     /* Ink */
     --mmpt-ink:   #1C2430;
@@ -383,14 +380,13 @@
     outline: none;
 }
 
-/* Task status — the main switch's visual language at a smaller scale, and
-   the first of the two triage filter bars. It runs the full width so it
-   ends where the colour bar and the mode switch do; a fourth, empty column
-   absorbs the width the three tabs do not need. Never `1fr` on the tab
-   columns — that stretches each tab to a third of the row. */
+/* Task status — the mode switch's visual language at a smaller scale, and
+   the first of the two triage filter bars. It runs the full width and the
+   three tabs divide it evenly, a third each, so the bar has no dead space
+   after All — the same shape as the mode switch above it. */
 .mmpt-statusswitch {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, var(--mmpt-tab-w, 150px))) 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 5px;
     padding: var(--mmpt-bar-pad, 5px);
     width: 100%;
@@ -411,6 +407,7 @@
     color: var(--mmpt-ink-2);
     display: inline-flex;
     align-items: center;
+    justify-content: center;   /* the tab is a third of the bar, not its label's width */
     gap: 8px;
     transition: background 0.15s, color 0.15s;
 }
@@ -1297,10 +1294,8 @@
 
     .mmpt-switch__tab { height: 52px; font-size: 16px; }
 
-    /* Drop the filler column: at this width the three tabs share the row
-       rather than leaving space no tab can use. */
-    .mmpt-statusswitch { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .mmpt-statusswitch__tab { padding: 0 10px; justify-content: center; }
+    /* The thirds are the base rule now; only the padding needs to give. */
+    .mmpt-statusswitch__tab { padding: 0 10px; }
 
     /* Keep every control a comfortable tap target */
     .mmpt-btn { min-height: 44px; }
