@@ -55,43 +55,46 @@
         return days + 'd ago';
     }
 
-    function stalenessHtml(level, days) {
-        var cls = 'mmpt-staleness-' + level;
+    function stalenessTag(level, days) {
         var text;
-        if (level === 'critical') text = days + 'd silent';
-        else if (level === 'warning') text = days + 'd silent';
+        if (level === 'critical' || level === 'warning') text = days + 'd silent';
         else text = daysLabel(days);
-        return '<span class="mmpt-chip-staleness ' + cls + '">' + text + '</span>';
+        return '<span class="mmpt-tag mmpt-tag--staleness">' + text + '</span>';
     }
 
-    function commitmentHtml(status, daysRemaining) {
+    function commitmentTag(status, daysRemaining) {
         if (status === 'none') return '';
-        var cls = 'mmpt-commitment-' + status;
         var text;
         if (status === 'on_track') text = Math.max(0, daysRemaining) + 'd left';
         else if (status === 'due_soon') text = 'Due in ' + Math.max(0, daysRemaining) + 'd';
         else if (status === 'late') text = 'Due ' + Math.abs(daysRemaining) + 'd ago';
         else text = 'Overdue by ' + Math.abs(daysRemaining) + 'd';
-        return '<span class="mmpt-chip-commitment ' + cls + '">' + text + '</span>';
+        return '<span class="mmpt-tag mmpt-tag--commitment">' + text + '</span>';
     }
 
-    function priorityChip(p) {
-        return '<span class="mmpt-chip mmpt-chip-priority mmpt-chip-priority-' + p + '">' +
+    function priorityTag(p) {
+        return '<span class="mmpt-tag mmpt-tag--priority">' +
             p.charAt(0).toUpperCase() + p.slice(1) + '</span>';
     }
 
     var CADENCE_DAYS = { daily: 1, weekly: 7, biweekly: 14, monthly: 30, quarterly: 90 };
 
-    function cardStatusClass(p) {
-        if (!p.cadence || p.cadence === 'none') return '';
-        var allowed = CADENCE_DAYS[p.cadence];
-        if (!allowed) return '';
-        var daysOverdue = p.days_since_activity - allowed;
-        if (daysOverdue < -2) return 'mmpt-card--on-track';
-        if (daysOverdue < 0) return 'mmpt-card--due-soon';
-        if (daysOverdue <= 3) return 'mmpt-card--slight-over';
-        if (daysOverdue <= 14) return 'mmpt-card--overdue';
-        return 'mmpt-card--severe';
+    /* The card's status modifier. A commitment cadence decides it when one is
+       set; otherwise staleness does. Same thresholds as v1 — only the names
+       and the colours they map to changed. */
+    function cardStatus(p) {
+        var allowed = p.cadence && p.cadence !== 'none' ? CADENCE_DAYS[p.cadence] : 0;
+        if (allowed) {
+            var daysOverdue = p.days_since_activity - allowed;
+            if (daysOverdue < -2) return 'on-track';
+            if (daysOverdue < 0) return 'due-soon';
+            if (daysOverdue <= 3) return 'overdue-light';
+            if (daysOverdue <= 14) return 'overdue';
+            return 'overdue-severe';
+        }
+        if (p.staleness_level === 'critical') return 'overdue-light';
+        if (p.staleness_level === 'warning') return 'due-soon';
+        return 'neutral';
     }
 
     function calcNextVersion(current, type) {
@@ -114,6 +117,7 @@
         state.counts = { active: active, archived: archived, milestones: milestones };
         $('#mmpt-count-active').textContent = active;
         $('#mmpt-count-archived').textContent = archived;
+        $('#mmpt-switch-count-projects').textContent = active;
         $('#mmpt-stat-active').textContent = active;
         $('#mmpt-stat-archived').textContent = archived;
         $('#mmpt-stat-milestones').textContent = milestones;
@@ -155,7 +159,7 @@
         return '<div class="mmpt-timeline-item" data-type="' + esc(m.type) + '">' +
             '<div class="mmpt-timeline-dot"></div>' +
             '<div class="mmpt-timeline-meta">' +
-            '<span class="mmpt-chip mmpt-chip-version">v' + esc(m.version) + '</span>' +
+            '<span class="mmpt-tag mmpt-tag--version">v' + esc(m.version) + '</span>' +
             '<span class="mmpt-timeline-date">' + formatDate(m.date) + '</span>' +
             '</div>' +
             '<div class="mmpt-timeline-desc">' + esc(m.description) + '</div>' +
@@ -186,8 +190,8 @@
     }
 
     function renderCard(p) {
-        var cat = p.category ? '<span class="mmpt-chip mmpt-chip-category">' + esc(p.category) + '</span>' : '';
-        var commitment = commitmentHtml(p.commitment_status, p.commitment_days_remaining);
+        var cat = p.category ? '<span class="mmpt-tag mmpt-tag--category">' + esc(p.category) + '</span>' : '';
+        var commitment = commitmentTag(p.commitment_status, p.commitment_days_remaining);
         var cadenceSection = '';
         if (p.cadence !== 'none') {
             cadenceSection = '<div class="mmpt-detail-section">' +
@@ -196,18 +200,18 @@
                 '</div>';
         }
         var archiveLabel = p.status === 'publish' ? 'Archive' : 'Restore';
-        var statusClass = cardStatusClass(p);
-        var cardClass = 'mmpt-card' + (statusClass ? ' ' + statusClass : '');
+        var cardClass = 'mmpt-card mmpt-card--' + cardStatus(p);
 
         return '<div class="' + cardClass + '" data-id="' + p.id + '" data-priority="' + p.priority + '" data-staleness="' + p.staleness_level + '">' +
             '<div class="mmpt-card-header">' +
-                '<span class="mmpt-card-name">' + esc(p.name) + '</span>' +
-                '<span class="mmpt-chip mmpt-chip-version">v' + esc(p.version) + '</span>' +
-                cat +
-                priorityChip(p.priority) +
-                stalenessHtml(p.staleness_level, p.days_since_activity) +
-                commitment +
-                '<span class="mmpt-card-spacer"></span>' +
+                '<h3 class="mmpt-card-name">' + esc(p.name) + '</h3>' +
+                '<div class="mmpt-card-tags">' +
+                    '<span class="mmpt-tag mmpt-tag--version">v' + esc(p.version) + '</span>' +
+                    cat +
+                    priorityTag(p.priority) +
+                    stalenessTag(p.staleness_level, p.days_since_activity) +
+                    commitment +
+                '</div>' +
                 '<span class="mmpt-card-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
             '</div>' +
             '<div class="mmpt-card-body">' +
@@ -225,10 +229,10 @@
                     renderMilestones(p.milestones) +
                 '</div>' +
                 '<div class="mmpt-card-actions">' +
-                    '<button class="mmpt-btn mmpt-btn-sm mmpt-btn-primary mmpt-action-milestone" data-id="' + p.id + '">+ Log Milestone</button>' +
-                    '<button class="mmpt-btn mmpt-btn-sm mmpt-btn-secondary mmpt-action-edit" data-id="' + p.id + '">Edit</button>' +
-                    '<button class="mmpt-btn mmpt-btn-sm mmpt-btn-secondary mmpt-action-archive" data-id="' + p.id + '">' + archiveLabel + '</button>' +
-                    '<button class="mmpt-btn mmpt-btn-sm mmpt-btn-ghost mmpt-action-delete" data-id="' + p.id + '">Delete</button>' +
+                    '<button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-btn--sm mmpt-action-milestone" data-id="' + p.id + '">+ Log Milestone</button>' +
+                    '<button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-btn--sm mmpt-action-edit" data-id="' + p.id + '">Edit</button>' +
+                    '<button type="button" class="mmpt-btn mmpt-btn--ghost mmpt-btn--sm mmpt-action-archive" data-id="' + p.id + '">' + archiveLabel + '</button>' +
+                    '<button type="button" class="mmpt-btn mmpt-btn--ghost mmpt-btn--sm mmpt-action-delete" data-id="' + p.id + '">Delete</button>' +
                 '</div>' +
                 '<div class="mmpt-card-created">Created ' + formatDate(p.created) + '</div>' +
             '</div>' +
@@ -260,10 +264,10 @@
         var stateClass = '';
         if (days < 0) {
             label = 'Overdue by ' + Math.abs(days) + ' day' + (Math.abs(days) === 1 ? '' : 's');
-            stateClass = ' mmpt-task-due-overdue';
+            stateClass = ' mmpt-task-due--overdue';
         } else if (days === 0) {
             label = 'Due today';
-            stateClass = ' mmpt-task-due-today';
+            stateClass = ' mmpt-task-due--today';
         } else {
             label = days + ' day' + (days === 1 ? '' : 's') + ' left';
         }
@@ -278,11 +282,11 @@
             ? '<p class="mmpt-task-description">' + esc(task.description) + '</p>'
             : '';
         var completeLabel = task.completed ? 'Reopen' : 'Complete';
-        var completedClass = task.completed ? ' mmpt-task-card-completed' : '';
+        var completedClass = task.completed ? ' mmpt-task-card--completed' : '';
 
-        return '<article class="mmpt-task-card mmpt-task-card-' + task.colour + completedClass + '" data-id="' + task.id + '">' +
+        return '<article class="mmpt-card mmpt-task-card mmpt-task-card--' + task.colour + completedClass + '" data-id="' + task.id + '">' +
             '<div class="mmpt-task-card-main">' +
-                '<span class="mmpt-colour-dot mmpt-colour-dot-' + task.colour + '" aria-hidden="true"></span>' +
+                '<span class="mmpt-dot mmpt-dot--' + task.colour + '" aria-hidden="true"></span>' +
                 '<div class="mmpt-task-content">' +
                     '<h4>' + esc(task.title) + '</h4>' +
                     description +
@@ -290,9 +294,9 @@
                 dueDateHtml(task) +
             '</div>' +
             '<div class="mmpt-task-actions">' +
-                '<button type="button" class="mmpt-btn mmpt-btn-sm mmpt-btn-primary mmpt-task-action-complete" data-id="' + task.id + '">' + completeLabel + '</button>' +
-                '<button type="button" class="mmpt-btn mmpt-btn-sm mmpt-btn-secondary mmpt-task-action-edit" data-id="' + task.id + '">Edit</button>' +
-                '<button type="button" class="mmpt-btn mmpt-btn-sm mmpt-btn-ghost mmpt-task-action-delete" data-id="' + task.id + '">Delete</button>' +
+                '<button type="button" class="mmpt-btn mmpt-btn--primary mmpt-btn--sm mmpt-task-action-complete" data-id="' + task.id + '">' + completeLabel + '</button>' +
+                '<button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-btn--sm mmpt-task-action-edit" data-id="' + task.id + '">Edit</button>' +
+                '<button type="button" class="mmpt-btn mmpt-btn--ghost mmpt-btn--sm mmpt-task-action-delete" data-id="' + task.id + '">Delete</button>' +
             '</div>' +
         '</article>';
     }
@@ -316,7 +320,7 @@
         var completed = state.tasks.length - open;
         $('#mmpt-count-tasks-open').textContent = open;
         $('#mmpt-count-tasks-completed').textContent = completed;
-        $('#mmpt-nav-task-count').textContent = open;
+        $('#mmpt-switch-count-tasks').textContent = open;
     }
 
     function renderTasks() {
@@ -337,12 +341,12 @@
         container.innerHTML = TASK_COLOURS.map(function (colour) {
             var tasks = sortTasks(visible.filter(function (task) { return task.colour === colour.key; }));
             if (!tasks.length) return '';
-            return '<section class="mmpt-task-group mmpt-task-group-' + colour.key + '">' +
+            return '<section class="mmpt-task-group mmpt-task-group--' + colour.key + '">' +
                 '<div class="mmpt-task-group-heading">' +
-                    '<span><i class="mmpt-colour-dot mmpt-colour-dot-' + colour.key + '"></i>' + colour.label + '</span>' +
-                    '<span class="mmpt-badge-count">' + tasks.length + '</span>' +
+                    '<span><i class="mmpt-dot mmpt-dot--' + colour.key + '"></i>' + colour.label + '</span>' +
+                    '<span class="mmpt-group__count">' + tasks.length + '</span>' +
                 '</div>' +
-                '<div class="mmpt-task-list">' + tasks.map(renderTask).join('') + '</div>' +
+                '<div class="mmpt-task-list mmpt-grid">' + tasks.map(renderTask).join('') + '</div>' +
             '</section>';
         }).join('');
     }
@@ -405,15 +409,36 @@
         loadProjects();
         loadTasks();
 
-        /* Main Sections */
-        $$('.mmpt-main-nav-item').forEach(function (item) {
-            item.addEventListener('click', function () {
-                var section = item.dataset.section;
-                $$('.mmpt-main-nav-item').forEach(function (navItem) {
-                    navItem.classList.toggle('mmpt-main-nav-item-active', navItem === item);
-                });
-                $('#mmpt-section-projects').hidden = section !== 'projects';
-                $('#mmpt-section-triage').hidden = section !== 'triage';
+        /* Mode switch — tablist with roving tabindex and arrow-key nav.
+           The header's primary action follows the active view. */
+        var switchTabs = $$('.mmpt-switch__tab');
+
+        function selectSection(section) {
+            switchTabs.forEach(function (tab) {
+                var selected = tab.dataset.section === section;
+                tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+                tab.tabIndex = selected ? 0 : -1;
+            });
+            $('#mmpt-section-projects').hidden = section !== 'projects';
+            $('#mmpt-section-triage').hidden = section !== 'triage';
+            $('#mmpt-new-btn').hidden = section !== 'projects';
+            $('#mmpt-new-task-btn').hidden = section !== 'triage';
+        }
+
+        switchTabs.forEach(function (tab, index) {
+            tab.addEventListener('click', function () {
+                selectSection(tab.dataset.section);
+            });
+            tab.addEventListener('keydown', function (e) {
+                var next;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = switchTabs[(index + 1) % switchTabs.length];
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = switchTabs[(index - 1 + switchTabs.length) % switchTabs.length];
+                else if (e.key === 'Home') next = switchTabs[0];
+                else if (e.key === 'End') next = switchTabs[switchTabs.length - 1];
+                if (!next) return;
+                e.preventDefault();
+                selectSection(next.dataset.section);
+                next.focus();
             });
         });
 
@@ -454,12 +479,13 @@
             });
         });
 
-        /* Task Status Tabs */
-        $$('.mmpt-task-tab').forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                $$('.mmpt-task-tab').forEach(function (item) { item.classList.remove('mmpt-tab-active'); });
-                tab.classList.add('mmpt-tab-active');
-                state.taskFilter = tab.dataset.taskStatus;
+        /* Task Status Chips */
+        $$('.mmpt-chip[data-task-status]').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                $$('.mmpt-chip[data-task-status]').forEach(function (item) {
+                    item.setAttribute('aria-pressed', item === chip ? 'true' : 'false');
+                });
+                state.taskFilter = chip.dataset.taskStatus;
                 renderTasks();
             });
         });
@@ -562,12 +588,13 @@
             });
         });
 
-        /* Tabs */
-        $$('.mmpt-tab[data-status]').forEach(function (tab) {
-            tab.addEventListener('click', function () {
-                $$('.mmpt-tab[data-status]').forEach(function (t) { t.classList.remove('mmpt-tab-active'); });
-                tab.classList.add('mmpt-tab-active');
-                state.filter.status = tab.dataset.status;
+        /* Project Status Chips */
+        $$('.mmpt-chip[data-status]').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                $$('.mmpt-chip[data-status]').forEach(function (c) {
+                    c.setAttribute('aria-pressed', c === chip ? 'true' : 'false');
+                });
+                state.filter.status = chip.dataset.status;
                 renderProjects();
             });
         });

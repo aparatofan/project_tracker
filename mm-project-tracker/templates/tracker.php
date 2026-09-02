@@ -1,80 +1,77 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <div id="mmpt-app" class="mmpt-app">
-    <nav class="mmpt-main-nav" aria-label="Tracker sections">
-        <button type="button" class="mmpt-main-nav-item mmpt-main-nav-item-active" data-section="projects">Project Tracker</button>
-        <button type="button" class="mmpt-main-nav-item" data-section="triage">Task Triage <span id="mmpt-nav-task-count" class="mmpt-badge-count">0</span></button>
-    </nav>
+    <!-- Header row: mode switch + the active view's primary action -->
+    <div class="mmpt-header">
+        <div class="mmpt-switch" role="tablist" aria-label="Tracker sections">
+            <button type="button" id="mmpt-tab-projects" class="mmpt-switch__tab" role="tab"
+                    aria-selected="true" aria-controls="mmpt-section-projects" tabindex="0"
+                    data-section="projects">
+                <span>Project Tracker</span>
+                <span id="mmpt-switch-count-projects" class="mmpt-switch__count">0</span>
+            </button>
+            <button type="button" id="mmpt-tab-triage" class="mmpt-switch__tab" role="tab"
+                    aria-selected="false" aria-controls="mmpt-section-triage" tabindex="-1"
+                    data-section="triage">
+                <span>Task Triage</span>
+                <span id="mmpt-switch-count-tasks" class="mmpt-switch__count">0</span>
+            </button>
+        </div>
+        <button type="button" id="mmpt-new-btn" class="mmpt-btn mmpt-btn--primary" data-section="projects">+ New project</button>
+        <button type="button" id="mmpt-new-task-btn" class="mmpt-btn mmpt-btn--primary" data-section="triage" hidden>+ New task</button>
+    </div>
 
-    <section id="mmpt-section-projects" class="mmpt-main-section">
-        <!-- Header -->
-        <div class="mmpt-header">
-            <div class="mmpt-header-left">
-                <h2 class="mmpt-title">Project Tracker</h2>
-                <p class="mmpt-subtitle">"Begin with the end in mind" &mdash; Habit 2</p>
-            </div>
-            <button id="mmpt-new-btn" class="mmpt-btn mmpt-btn-primary">+ New Project</button>
+    <section id="mmpt-section-projects" class="mmpt-main-section" role="tabpanel" aria-labelledby="mmpt-tab-projects">
+        <!-- Status filter -->
+        <div class="mmpt-chips" role="group" aria-label="Filter projects by status">
+            <button type="button" class="mmpt-chip" data-status="publish" aria-pressed="true">Active <span id="mmpt-count-active" class="mmpt-chip__count">0</span></button>
+            <button type="button" class="mmpt-chip" data-status="draft" aria-pressed="false">Archived <span id="mmpt-count-archived" class="mmpt-chip__count">0</span></button>
+            <button type="button" class="mmpt-chip" data-status="all" aria-pressed="false">All</button>
         </div>
 
-        <!-- Filters -->
-        <div class="mmpt-filters">
-            <div class="mmpt-tabs">
-                <button class="mmpt-tab mmpt-tab-active" data-status="publish">Active <span id="mmpt-count-active" class="mmpt-badge-count">0</span></button>
-                <button class="mmpt-tab" data-status="draft">Archived <span id="mmpt-count-archived" class="mmpt-badge-count">0</span></button>
-                <button class="mmpt-tab" data-status="all">All</button>
-            </div>
-            <div class="mmpt-filter-row">
-                <select id="mmpt-filter-priority" class="mmpt-select">
-                    <option value="">All Priorities</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                </select>
-                <select id="mmpt-filter-sort" class="mmpt-select">
-                    <option value="neglected">Most Neglected</option>
-                    <option value="priority">By Priority</option>
-                    <option value="version">By Version</option>
-                    <option value="newest">Newest First</option>
-                </select>
-                <input type="text" id="mmpt-search" class="mmpt-search" placeholder="Search projects" />
-            </div>
+        <!-- Tools -->
+        <div class="mmpt-tools">
+            <select id="mmpt-filter-priority" class="mmpt-select" aria-label="Filter by priority">
+                <option value="">All priorities</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+            </select>
+            <select id="mmpt-filter-sort" class="mmpt-select" aria-label="Sort projects">
+                <option value="neglected">Most neglected</option>
+                <option value="priority">By priority</option>
+                <option value="version">By version</option>
+                <option value="newest">Newest first</option>
+            </select>
+            <input type="search" id="mmpt-search" class="mmpt-search" placeholder="Search projects&hellip;" aria-label="Search projects" />
         </div>
 
-        <!-- Project List -->
-        <div id="mmpt-projects" class="mmpt-projects">
+        <!-- Project grid -->
+        <div id="mmpt-projects" class="mmpt-grid">
             <div class="mmpt-loading">Loading projects...</div>
         </div>
 
         <!-- Stats Footer -->
         <div id="mmpt-footer" class="mmpt-footer">
-            <span>Active: <strong id="mmpt-stat-active">0</strong></span>
-            <span>Total Milestones: <strong id="mmpt-stat-milestones">0</strong></span>
-            <span>Archived: <strong id="mmpt-stat-archived">0</strong></span>
+            <span>Active <strong id="mmpt-stat-active">0</strong></span>
+            <span>Total milestones <strong id="mmpt-stat-milestones">0</strong></span>
+            <span>Archived <strong id="mmpt-stat-archived">0</strong></span>
         </div>
     </section>
 
-    <section id="mmpt-section-triage" class="mmpt-main-section" hidden>
-        <div class="mmpt-header">
-            <div class="mmpt-header-left">
-                <h2 class="mmpt-title">Task Triage</h2>
-                <p class="mmpt-subtitle">Decide what needs your attention first.</p>
-            </div>
-            <button id="mmpt-new-task-btn" class="mmpt-btn mmpt-btn-primary">+ New Task</button>
+    <section id="mmpt-section-triage" class="mmpt-main-section" role="tabpanel" aria-labelledby="mmpt-tab-triage" hidden>
+        <!-- Status filter -->
+        <div class="mmpt-chips" role="group" aria-label="Filter tasks by status">
+            <button type="button" class="mmpt-chip" data-task-status="open" aria-pressed="true">Open <span id="mmpt-count-tasks-open" class="mmpt-chip__count">0</span></button>
+            <button type="button" class="mmpt-chip" data-task-status="completed" aria-pressed="false">Completed <span id="mmpt-count-tasks-completed" class="mmpt-chip__count">0</span></button>
+            <button type="button" class="mmpt-chip" data-task-status="all" aria-pressed="false">All</button>
         </div>
 
-        <div class="mmpt-filters">
-            <div class="mmpt-tabs">
-                <button class="mmpt-task-tab mmpt-tab mmpt-tab-active" data-task-status="open">Open <span id="mmpt-count-tasks-open" class="mmpt-badge-count">0</span></button>
-                <button class="mmpt-task-tab mmpt-tab" data-task-status="completed">Completed <span id="mmpt-count-tasks-completed" class="mmpt-badge-count">0</span></button>
-                <button class="mmpt-task-tab mmpt-tab" data-task-status="all">All</button>
-            </div>
-        </div>
-
-        <div class="mmpt-triage-legend" aria-label="Triage colour meanings">
-            <span><i class="mmpt-colour-dot mmpt-colour-dot-red"></i> Critical</span>
-            <span><i class="mmpt-colour-dot mmpt-colour-dot-orange"></i> Vital</span>
-            <span><i class="mmpt-colour-dot mmpt-colour-dot-yellow"></i> Advised</span>
-            <span><i class="mmpt-colour-dot mmpt-colour-dot-green"></i> If there’s time</span>
-            <span><i class="mmpt-colour-dot mmpt-colour-dot-black"></i> No chance</span>
+        <div class="mmpt-legend" aria-label="Triage colour meanings">
+            <span><i class="mmpt-dot mmpt-dot--red"></i> Critical</span>
+            <span><i class="mmpt-dot mmpt-dot--orange"></i> Vital</span>
+            <span><i class="mmpt-dot mmpt-dot--yellow"></i> Advised</span>
+            <span><i class="mmpt-dot mmpt-dot--green"></i> If there’s time</span>
+            <span><i class="mmpt-dot mmpt-dot--black"></i> No chance</span>
         </div>
 
         <div id="mmpt-tasks" class="mmpt-task-groups">
@@ -119,8 +116,8 @@
                     </div>
                 </div>
                 <div class="mmpt-form-actions">
-                    <button type="button" class="mmpt-btn mmpt-btn-secondary mmpt-modal-close">Cancel</button>
-                    <button type="submit" id="mmpt-submit-task" class="mmpt-btn mmpt-btn-primary" disabled>Add Task</button>
+                    <button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-modal-close">Cancel</button>
+                    <button type="submit" id="mmpt-submit-task" class="mmpt-btn mmpt-btn--primary" disabled>Add Task</button>
                 </div>
             </form>
         </div>
@@ -137,8 +134,8 @@
             <p>Are you sure you want to permanently delete <strong id="mmpt-task-delete-name"></strong>? This cannot be undone.</p>
             <input type="hidden" id="mmpt-task-delete-id" value="" />
             <div class="mmpt-form-actions">
-                <button type="button" class="mmpt-btn mmpt-btn-secondary mmpt-modal-close">Cancel</button>
-                <button type="button" id="mmpt-confirm-task-delete" class="mmpt-btn mmpt-btn-danger">Delete</button>
+                <button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-modal-close">Cancel</button>
+                <button type="button" id="mmpt-confirm-task-delete" class="mmpt-btn mmpt-btn--danger">Delete</button>
             </div>
         </div>
     </div>
@@ -149,7 +146,7 @@
         <div class="mmpt-modal-content">
             <div class="mmpt-modal-header">
                 <h3 id="mmpt-modal-project-title">Begin With The End In Mind</h3>
-                <button class="mmpt-modal-close">&times;</button>
+                <button type="button" class="mmpt-modal-close" aria-label="Close">&times;</button>
             </div>
             <p class="mmpt-modal-subtitle" id="mmpt-modal-project-subtitle">Before you start, define where you want to end up and why this matters.</p>
             <form id="mmpt-form-project" class="mmpt-form">
@@ -204,8 +201,8 @@
                     </div>
                 </div>
                 <div class="mmpt-form-actions">
-                    <button type="button" class="mmpt-btn mmpt-btn-secondary mmpt-modal-close">Cancel</button>
-                    <button type="submit" id="mmpt-submit-project" class="mmpt-btn mmpt-btn-primary" disabled>Create Project</button>
+                    <button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-modal-close">Cancel</button>
+                    <button type="submit" id="mmpt-submit-project" class="mmpt-btn mmpt-btn--primary" disabled>Create Project</button>
                 </div>
             </form>
         </div>
@@ -217,7 +214,7 @@
         <div class="mmpt-modal-content">
             <div class="mmpt-modal-header">
                 <h3>Log Milestone — <span id="mmpt-ms-project-name"></span></h3>
-                <button class="mmpt-modal-close">&times;</button>
+                <button type="button" class="mmpt-modal-close" aria-label="Close">&times;</button>
             </div>
             <p class="mmpt-modal-subtitle">Current: <strong id="mmpt-ms-current-ver"></strong> &rarr; Next: <strong id="mmpt-ms-next-ver"></strong></p>
             <form id="mmpt-form-milestone" class="mmpt-form">
@@ -235,8 +232,8 @@
                     <textarea id="mmpt-ms-desc" required placeholder="Describe this milestone..." rows="3"></textarea>
                 </div>
                 <div class="mmpt-form-actions">
-                    <button type="button" class="mmpt-btn mmpt-btn-secondary mmpt-modal-close">Cancel</button>
-                    <button type="submit" class="mmpt-btn mmpt-btn-primary">Log Milestone</button>
+                    <button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-modal-close">Cancel</button>
+                    <button type="submit" class="mmpt-btn mmpt-btn--primary">Log Milestone</button>
                 </div>
             </form>
         </div>
@@ -248,13 +245,13 @@
         <div class="mmpt-modal-content mmpt-modal-small">
             <div class="mmpt-modal-header">
                 <h3>Delete Project</h3>
-                <button class="mmpt-modal-close">&times;</button>
+                <button type="button" class="mmpt-modal-close" aria-label="Close">&times;</button>
             </div>
             <p>Are you sure you want to permanently delete <strong id="mmpt-delete-name"></strong>? This cannot be undone.</p>
             <input type="hidden" id="mmpt-delete-id" value="" />
             <div class="mmpt-form-actions">
-                <button type="button" class="mmpt-btn mmpt-btn-secondary mmpt-modal-close">Cancel</button>
-                <button type="button" id="mmpt-confirm-delete" class="mmpt-btn mmpt-btn-danger">Delete</button>
+                <button type="button" class="mmpt-btn mmpt-btn--secondary mmpt-modal-close">Cancel</button>
+                <button type="button" id="mmpt-confirm-delete" class="mmpt-btn mmpt-btn--danger">Delete</button>
             </div>
         </div>
     </div>
