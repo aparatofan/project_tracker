@@ -1,21 +1,24 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; ?>
 <div id="mmpt-app" class="mmpt-app">
-    <!-- Header row: mode switch + the active view's primary action -->
-    <div class="mmpt-header">
-        <div class="mmpt-switch" role="tablist" aria-label="Tracker sections">
-            <button type="button" id="mmpt-tab-projects" class="mmpt-switch__tab" role="tab"
-                    aria-selected="true" aria-controls="mmpt-section-projects" tabindex="0"
-                    data-section="projects">
-                <span>Project Tracker</span>
-                <span id="mmpt-switch-count-projects" class="mmpt-switch__count">0</span>
-            </button>
-            <button type="button" id="mmpt-tab-triage" class="mmpt-switch__tab" role="tab"
-                    aria-selected="false" aria-controls="mmpt-section-triage" tabindex="-1"
-                    data-section="triage">
-                <span>Task Triage</span>
-                <span id="mmpt-switch-count-tasks" class="mmpt-switch__count">0</span>
-            </button>
-        </div>
+    <!-- Top-level navigation: the mode switch runs the full width -->
+    <div class="mmpt-switch" role="tablist" aria-label="Tracker sections">
+        <button type="button" id="mmpt-tab-projects" class="mmpt-switch__tab" role="tab"
+                aria-selected="true" aria-controls="mmpt-section-projects" tabindex="0"
+                data-section="projects">
+            <span>Project Tracker</span>
+            <span id="mmpt-switch-count-projects" class="mmpt-switch__count">0</span>
+        </button>
+        <button type="button" id="mmpt-tab-triage" class="mmpt-switch__tab" role="tab"
+                aria-selected="false" aria-controls="mmpt-section-triage" tabindex="-1"
+                data-section="triage">
+            <span>Task Triage</span>
+            <span id="mmpt-switch-count-tasks" class="mmpt-switch__count">0</span>
+        </button>
+    </div>
+
+    <!-- Page head: the active view's title, and its primary action -->
+    <div class="mmpt-pagehead">
+        <h2 id="mmpt-pagehead-title" class="mmpt-pagehead__title">Project Tracker</h2>
         <button type="button" id="mmpt-new-btn" class="mmpt-btn mmpt-btn--primary" data-section="projects">+ New project</button>
         <button type="button" id="mmpt-new-task-btn" class="mmpt-btn mmpt-btn--primary" data-section="triage" hidden>+ New task</button>
     </div>
@@ -59,22 +62,59 @@
     </section>
 
     <section id="mmpt-section-triage" class="mmpt-main-section" role="tabpanel" aria-labelledby="mmpt-tab-triage" hidden>
-        <!-- Status filter -->
-        <div class="mmpt-chips" role="group" aria-label="Filter tasks by status">
-            <button type="button" class="mmpt-chip" data-task-status="open" aria-pressed="true">Open <span id="mmpt-count-tasks-open" class="mmpt-chip__count">0</span></button>
-            <button type="button" class="mmpt-chip" data-task-status="completed" aria-pressed="false">Completed <span id="mmpt-count-tasks-completed" class="mmpt-chip__count">0</span></button>
-            <button type="button" class="mmpt-chip" data-task-status="all" aria-pressed="false">All</button>
+        <!-- Status: segmented control, sized to its content -->
+        <div class="mmpt-statusswitch" role="tablist" aria-label="Filter tasks by status">
+            <button type="button" class="mmpt-statusswitch__tab" role="tab" aria-controls="mmpt-tasks"
+                    aria-selected="true" tabindex="0" data-task-status="open">
+                <span>Open</span>
+                <span id="mmpt-count-tasks-open" class="mmpt-statusswitch__count">0</span>
+            </button>
+            <button type="button" class="mmpt-statusswitch__tab" role="tab" aria-controls="mmpt-tasks"
+                    aria-selected="false" tabindex="-1" data-task-status="completed">
+                <span>Completed</span>
+                <span id="mmpt-count-tasks-completed" class="mmpt-statusswitch__count">0</span>
+            </button>
+            <button type="button" class="mmpt-statusswitch__tab" role="tab" aria-controls="mmpt-tasks"
+                    aria-selected="false" tabindex="-1" data-task-status="all">
+                <span>All</span>
+            </button>
         </div>
 
-        <div class="mmpt-legend" aria-label="Triage colour meanings">
-            <span><i class="mmpt-dot mmpt-dot--red"></i> Critical</span>
-            <span><i class="mmpt-dot mmpt-dot--orange"></i> Vital</span>
-            <span><i class="mmpt-dot mmpt-dot--yellow"></i> Advised</span>
-            <span><i class="mmpt-dot mmpt-dot--green"></i> If there’s time</span>
-            <span><i class="mmpt-dot mmpt-dot--black"></i> No chance</span>
+        <!-- Priority: single-select toggles. Counts are filled in by JS. -->
+        <div class="mmpt-prio" role="group" aria-label="Filter tasks by priority">
+            <button type="button" class="mmpt-prio__btn" data-priority="all" aria-pressed="true">
+                <span class="mmpt-prio__dot" aria-hidden="true"></span>
+                <span>All</span>
+                <span class="mmpt-prio__count">0</span>
+            </button>
+            <button type="button" class="mmpt-prio__btn" data-priority="critical" aria-pressed="false">
+                <span class="mmpt-prio__dot" aria-hidden="true"></span>
+                <span>Critical</span>
+                <span class="mmpt-prio__count">0</span>
+            </button>
+            <button type="button" class="mmpt-prio__btn" data-priority="vital" aria-pressed="false">
+                <span class="mmpt-prio__dot" aria-hidden="true"></span>
+                <span>Vital</span>
+                <span class="mmpt-prio__count">0</span>
+            </button>
+            <button type="button" class="mmpt-prio__btn" data-priority="advised" aria-pressed="false">
+                <span class="mmpt-prio__dot" aria-hidden="true"></span>
+                <span>Advised</span>
+                <span class="mmpt-prio__count">0</span>
+            </button>
+            <button type="button" class="mmpt-prio__btn" data-priority="if-time" aria-pressed="false">
+                <span class="mmpt-prio__dot" aria-hidden="true"></span>
+                <span>If there&rsquo;s time</span>
+                <span class="mmpt-prio__count">0</span>
+            </button>
+            <button type="button" class="mmpt-prio__btn" data-priority="no-chance" aria-pressed="false">
+                <span class="mmpt-prio__dot" aria-hidden="true"></span>
+                <span>No chance</span>
+                <span class="mmpt-prio__count">0</span>
+            </button>
         </div>
 
-        <div id="mmpt-tasks" class="mmpt-task-groups">
+        <div id="mmpt-tasks" class="mmpt-grid">
             <div class="mmpt-loading">Loading tasks...</div>
         </div>
     </section>
