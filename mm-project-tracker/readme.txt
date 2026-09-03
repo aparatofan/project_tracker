@@ -4,7 +4,7 @@ Tags: project management, tracker, personal
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 
 A personal project management tool — "Begin with the end in mind." (Covey Habit 2)
@@ -43,6 +43,16 @@ also releases `.et_pb_row` / `.et_pb_row_inner` containing the app in CSS,
 which covers most layouts on its own.
 
 == Changelog ==
+
+= 1.5.1 =
+* Task Triage: Vital and Advised moved apart in hue. They sat 11 degrees
+  apart and read as one colour at swatch size, with Advised the darker of
+  the two — the lower urgency looking heavier than the higher one. Vital is
+  now a deeper orange and Advised a true yellow rather than an ochre
+* Task Triage: the unselected Advised swatch carries a stronger tint, so it
+  stays visible against the bar behind it now that the colour is brighter
+* Task Triage: the count on the selected Advised swatch is dark rather than
+  white, which was unreadable on a yellow fill
 
 = 1.5.0 =
 * Task Triage: the priority pills became a row of six colour swatches —
